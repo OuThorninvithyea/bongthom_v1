@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(go vet *)",
+      "Bash(go get *)",
+      "Bash(go mod *)",
+      "Bash(go build *)",
+      "Bash(env)",
+      "Bash(psql -d postgres -c \"\\\\du\")",
+      "Bash(psql -d postgres -c \"\\\\l\")",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U outhorninvuth -d postgres -c \"\\\\dt\")",
+      "Bash(brew services *)",
+      "Read(//opt/homebrew/var/**)",
+      "Bash(brew list *)",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U outhorninvuth -d postgres -c \"SELECT version\\(\\);\")",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U outhorninvuth -d postgres -c \"\\\\d users\")",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U outhorninvuth -d postgres -c \"SELECT id, username, password FROM users ORDER BY id;\")",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 5432 -U outhorninvuth -d postgres)",
+      "Bash(PGPASSWORD= psql \"postgresql://outhorninvuth:postgres@localhost:5432/postgres?sslmode=disable\" -c \"SELECT current_user, current_database\\(\\), ssl FROM pg_stat_ssl WHERE pid = pg_backend_pid\\(\\);\")"
+    ]
+  }
+}
