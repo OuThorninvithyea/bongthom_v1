@@ -61,7 +61,7 @@ func (a *AuthHandler) Login(c fiber.Ctx) error {
 				response.NewResponseError(
 					e_msg.Err.Error(),
 					constants.Translate_Failed,
-					e.Err,
+					e_msg.Err,
 				),
 			)
 		}
