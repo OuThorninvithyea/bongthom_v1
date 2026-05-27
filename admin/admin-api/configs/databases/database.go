@@ -52,7 +52,6 @@ func initializeDB() {
 		log.Fatalln("Error connection to the database", err_db)
 	}
 	fmt.Printf("Database Connected")
-
 	go listenForNotifications(DATABASE_URL)
 	go listenForUserNotifications(DATABASE_URL)
 
