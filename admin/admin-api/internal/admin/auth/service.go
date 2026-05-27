@@ -1,13 +1,17 @@
 package auth
 
-import "github.com/jmoiron/sqlx"
+import (
+	//Community pacakges
+	"github.com/jmoiron/sqlx"
+	error_responses "admin-api/pkg/responses"
+)
 
 type AuthServiceImpl struct {
 	Repo AuthRepo
 }
 
 type AuthService interface {
-	Login(username string, password string) (error, bool)
+	Login(username string, password string) (*AuthLoginReponse, *error_responses.ErrorResponse)
 }
 
 func NewAuthServiceImpl(db *sqlx.DB) *AuthServiceImpl {
@@ -17,6 +21,6 @@ func NewAuthServiceImpl(db *sqlx.DB) *AuthServiceImpl {
 	}
 }
 
-func (s *AuthServiceImpl) Login(username, password string) (error, bool) {
+func (s *AuthServiceImpl) Login(username, password string) (*AuthLoginReponse, *error_responses.ErrorResponse) {
 	return s.Repo.Login(username, password)
 }

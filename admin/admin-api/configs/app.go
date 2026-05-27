@@ -2,9 +2,9 @@ package config
 
 import (
 	// Community Packages
+	"github.com/joho/godotenv"
 	"log"
 	"os"
-	"github.com/joho/godotenv"
 
 	// Internal Packages
 	"admin-api/pkg/utls"

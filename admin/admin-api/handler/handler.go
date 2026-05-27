@@ -7,7 +7,7 @@ import (
 
 	// Internal packages
 	"admin-api/internal/admin/auth"
-	"admin-api/internal/admin/websocket"	
+	"admin-api/internal/admin/websocket"
 )
 
 type ServiceHandlers struct {

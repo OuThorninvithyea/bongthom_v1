@@ -4,12 +4,12 @@ import (
 	// Commnuity pacakges
 	"encoding/json"
 	"fmt"
+	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 	"log"
 	"os"
 	"sync"
 	"time"
-	"github.com/jmoiron/sqlx"
-	"github.com/lib/pq"
 
 	// Internal pacakges
 	"admin-api/internal/admin/websocket"
@@ -50,7 +50,7 @@ func initializeDB() {
 	db_pool, err_db = sqlx.Connect("postgres", DATABASE_URL)
 	if err_db != nil {
 		log.Fatalln("Error connection to the database", err_db)
-	} 
+	}
 	fmt.Printf("Database Connected")
 
 	go listenForNotifications(DATABASE_URL)

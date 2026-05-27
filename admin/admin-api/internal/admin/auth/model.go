@@ -18,7 +18,7 @@ type AuthRequest struct {
 	Password string `json:"password" validate:"required"`
 }
 
-// functions bind purpose is to be able to add 2+ specail validate , or over standard, 
+// functions bind purpose is to be able to add 2+ specail validate , or over standard,
 // icase there is more to validated with database......
 func (r *AuthRequest) bind(c fiber.Ctx, v *utls.Validator) error {
 	if err := c.Bind().Body(&r); err != nil {
@@ -35,4 +35,11 @@ type AuthResponse struct {
 	IsSucces bool   `json:"is_success"`
 	Username string `json:"username"`
 	Password string `json:"password"`
+}
+
+type AuthLoginReponse struct {
+	Auth struct {
+		Token     string `json:"token"`
+		TokenType string `json:"token_type"`
+	} `json:"auth"`
 }
