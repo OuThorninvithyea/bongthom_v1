@@ -32,7 +32,7 @@ func (r *AuthRequest) bind(c fiber.Ctx, v *utls.Validator) error {
 
 type AuthResponse struct {
 	// Tag field (is basicly functions)
-	IsSucces bool   `json:"is_success"`
+	IsSucces bool  	`json:"is_success"`
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
