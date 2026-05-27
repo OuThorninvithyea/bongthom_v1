@@ -1,15 +1,18 @@
 package database
 
 import (
+	// Commnuity pacakges
 	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"sync"
 	"time"
-	"admin-api/internal/admin/websocket"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
+
+	// Internal pacakges
+	"admin-api/internal/admin/websocket"
 )
 
 type Notification struct {

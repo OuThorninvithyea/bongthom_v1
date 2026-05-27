@@ -1,11 +1,13 @@
 package handler
 
 import (
-	"admin-api/internal/admin/auth"
-	"admin-api/internal/admin/websocket"
-
+	// Community packages
 	"github.com/gofiber/fiber/v3"
 	"github.com/jmoiron/sqlx"
+
+	// Internal packages
+	"admin-api/internal/admin/auth"
+	"admin-api/internal/admin/websocket"	
 )
 
 type ServiceHandlers struct {
