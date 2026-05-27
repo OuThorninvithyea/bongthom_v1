@@ -4,8 +4,11 @@ import (
 	// Commnuity Packages
 	"github.com/gofiber/fiber/v3"
 	"github.com/jmoiron/sqlx"
-	
+
 	// Internal Packages
+	constants "admin-api/pkg/constants"
+	response "admin-api/pkg/http"
+	"admin-api/pkg/translate"
 	"admin-api/pkg/utls"
 )
 
@@ -13,7 +16,7 @@ type AuthHandler struct {
 	Services AuthService
 }
 
-func NewAuthHandler(a *fiber.App, db *sqlx.DB,) *AuthHandler {
+func NewAuthHandler(a *fiber.App, db *sqlx.DB) *AuthHandler {
 	s := NewAuthServiceImpl(db)
 	return &AuthHandler{
 		Services: s,
@@ -22,6 +25,7 @@ func NewAuthHandler(a *fiber.App, db *sqlx.DB,) *AuthHandler {
 
 // payload = http body response // request
 func (a *AuthHandler) Login(c fiber.Ctx) error {
+
 	req := &AuthRequest{}
 	// validator is dev package,
 	v := utls.NewValidator()
@@ -29,26 +33,44 @@ func (a *AuthHandler) Login(c fiber.Ctx) error {
 		return err
 	}
 
-	e, rs := a.Services.Login(req.Username, req.Password)
+	rs, e := a.Services.Login(req.Username, req.Password)
 	// conditions for database error
 	if e != nil {
+		msg, e_msg := translate.TranslateWithError(c, e.MessageID)
+		if e_msg != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(
+				response.NewResponseError(
+					e_msg.Err.Error(),
+					constants.Translate_Failed,
+					e.Err,
+				),
+			)
+		}
 		c.Status(fiber.StatusInternalServerError)
-		return c.JSON(fiber.Map{
-			"success":     false,
-			"message":     "msg_failed",
-			"status_code": 3000,
-			"data":        "The JWT could not be generated. Please try again later",
-		})
+		return c.Status(fiber.StatusBadRequest).JSON(
+			response.NewResponseError(
+				msg,
+				constants.Login_failed,
+				e.Err,
+			),
+		)
 	} else {
-		return c.JSON(fiber.Map{
-			"success":     true,
-			"message":     "Login successful.",
-			"status_code": 9000,
-			"data":        AuthResponse{IsSucces: rs},
-		})
+		msg, e_msg := translate.TranslateWithError(c, "login_success")
+		if e_msg != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(
+				response.NewResponseError(
+					e_msg.Err.Error(),
+					constants.Translate_Failed,
+					e.Err,
+				),
+			)
+		}
+		return c.Status(fiber.StatusOK).JSON(
+			response.NewResponse(msg, constants.Login_success, rs),
+		)
 	}
-}
 
+}
 
 // func (a *AuthHandler) CheckStats(c fiber.Ctx) error  {
 // 	if e != nil {

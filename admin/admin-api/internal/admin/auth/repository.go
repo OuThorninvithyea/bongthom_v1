@@ -2,11 +2,15 @@ package auth
 
 import (
 	// Community Pacakges
+	"fmt"
+	
+	// Internal packages
+	error_responses "admin-api/pkg/responses"
 	"github.com/jmoiron/sqlx"
 )
 
 type AuthRepo interface {
-	Login(username string, password string) (error, bool)
+	Login(username string, password string) (*AuthLoginReponse, *error_responses.ErrorResponse)
 }
 
 type AuthRepoImpl struct {
@@ -17,16 +21,22 @@ func NewAuthRepoImpl(db *sqlx.DB) *AuthRepoImpl {
 	return &AuthRepoImpl{db: db}
 }
 
-func (r *AuthRepoImpl) Login(username string, password string) (error, bool) {
+func (r *AuthRepoImpl) Login(username string, password string) (*AuthLoginReponse, *error_responses.ErrorResponse) {
 	var count int
+	msg := error_responses.ErrorResponse{}
 	// db is pool connecitons
 	err := r.db.Get(
 		&count,
 		"SELECT COUNT(*) FROM users WHERE username = $1 AND password = $2",
 		username, password,
 	)
-	if err != nil {
-		return err, false
+	
+	if err != nil || count == 0 {
+		return nil, msg.NewErrorResponse("user_not_found", fmt.Errorf("Failed to generate UUID. Please try again later."))
 	}
-	return nil, count > 0
+	
+	var au AuthLoginReponse
+	au.Auth.Token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.KMUFsIDTnFmyG3nMiGM6H9FNFUROf3wh7SmqJp-QV30"
+	au.Auth.TokenType = "jwt"
+	return &au, nil
 }

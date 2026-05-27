@@ -1,11 +1,13 @@
 package websocket
 
 import (
+
+	// Community pacakges
 	"encoding/base64"
 	"fmt"
+	"github.com/gofiber/contrib/websocket"
 	"log"
 	"sync"
-	"github.com/gofiber/contrib/websocket"
 )
 
 var gobal_clients = make(map[string]*Client)
