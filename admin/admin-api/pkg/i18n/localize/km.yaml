@@ -1,0 +1,7 @@
+loginSessionMissing: "គ្មាន login_session"
+login_failed: "ចូលប្រព័ន្ធកម្មវិធី បរាជ័យ"
+user_not_found: "មិនមានអ្នកប្រើប្រាស់"
+
+# module auth
+login_invalid: "ការចូលប្រើមិនត្រឹមត្រូវ" 
+login_success: "ចូលប្រព័ន្ធកម្មវិធី ជោគជ័យ"

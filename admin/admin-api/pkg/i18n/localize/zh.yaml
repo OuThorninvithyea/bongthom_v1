@@ -1,0 +1,7 @@
+loginSessionMissing: "登录会话丢失"
+login_failed: "登录失败"
+user_not_found: "找不到用户"
+
+# module auth
+login_invalid : "登录无效"
+login_success: "登录成功"
