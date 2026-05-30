@@ -1,7 +1,12 @@
 loginSessionMissing: "Login session missing"
 login_failed: "Login Failed"
 user_not_found: "User not found"
+invalid_credentials: "Invalid credentials"
+token_generation_failed: "Token generation failed"
+
+validation_min: "{{.Field}} must be at least {{.Param}} characters"
+validation_required: "{{.Field}} is required"
 
 # module auth
-login_invalid : "Invalid request"
+login_invalid: "Invalid request"
 login_success: "Login Success"

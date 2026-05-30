@@ -4,12 +4,13 @@ import (
 	// Commnuity pacakges
 	"encoding/json"
 	"fmt"
-	"github.com/jmoiron/sqlx"
-	"github.com/lib/pq"
 	"log"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 
 	// Internal pacakges
 	"admin-api/internal/admin/websocket"
@@ -52,8 +53,10 @@ func initializeDB() {
 		log.Fatalln("Error connection to the database", err_db)
 	}
 	fmt.Printf("Database Connected")
+
 	go listenForNotifications(DATABASE_URL)
 	go listenForUserNotifications(DATABASE_URL)
+	go cleanupExpiredAuthTokens()
 
 	if err := db_pool.Ping(); err != nil {
 		defer db_pool.Close()
@@ -69,6 +72,19 @@ func initializeDB() {
 func GetDB() *sqlx.DB {
 	once.Do(initializeDB)
 	return db_pool
+}
+
+// cleanupExpiredAuthTokens deletes expired or revoked tokens every hour
+func cleanupExpiredAuthTokens() {
+	ticker := time.NewTicker(1 * time.Hour)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		_, err := db_pool.Exec(`DELETE FROM auth_users WHERE expires_at < NOW() OR is_revoked = true`)
+		if err != nil {
+			log.Println("Token cleanup error:", err)
+		}
+	}
 }
 
 // Function to start listening for PostgreSQL notifications

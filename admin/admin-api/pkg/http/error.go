@@ -21,13 +21,18 @@ type ErrorData struct {
 	Error string `json:"error"`
 }
 
+// pkg/http/error.go
 func NewResponseError(message string, statusCode int, err error) ErrorsResponse {
+	errMsg := ""
+	if err != nil {
+		errMsg = err.Error()
+	}
 	return ErrorsResponse{
 		Success:    false,
 		Message:    message,
 		StatusCode: statusCode,
 		Data: ErrorData{
-			Error: err.Error(),
+			Error: errMsg,
 		},
 	}
 }

@@ -1,7 +1,12 @@
 loginSessionMissing: "គ្មាន login_session"
 login_failed: "ចូលប្រព័ន្ធកម្មវិធី បរាជ័យ"
 user_not_found: "មិនមានអ្នកប្រើប្រាស់"
+invalid_credentials: "ព័ត៌មានចូលមិនត្រឹមត្រូវ"
+token_generation_failed: "បង្កើត token បរាជ័យ"
+
+validation_min: "{{.Field}} ត្រូវមានយ៉ាងតិច {{.Param}} តួអក្សរ"
+validation_required: "{{.Field}} ត្រូវបំពេញ"
 
 # module auth
-login_invalid: "ការចូលប្រើមិនត្រឹមត្រូវ" 
+login_invalid: "ការចូលប្រើមិនត្រឹមត្រូវ"
 login_success: "ចូលប្រព័ន្ធកម្មវិធី ជោគជ័យ"

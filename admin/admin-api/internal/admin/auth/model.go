@@ -2,11 +2,38 @@ package auth
 
 import (
 	// Commnunity Pacakges
+	"time"
+
 	"github.com/gofiber/fiber/v3"
 
 	// Internal Packages
 	"admin-api/pkg/utls"
 )
+
+// Auth maps to tbl_users
+type Auth struct {
+	ID           int64      `json:"id" db:"id"`
+	FirstName    *string    `json:"first_name" db:"first_name"`
+	LastName     *string    `json:"last_name" db:"last_name"`
+	UserName     string     `json:"user_name" db:"user_name"`
+	Email        *string    `json:"email" db:"email"`
+	Password     string     `json:"-" db:"password"`
+	RoleName     string     `json:"role_name" db:"role_name"`
+	RoleId       int        `json:"role_id" db:"role_id"`
+	IsAdmin      bool       `json:"is_admin" db:"is_admin"`
+	LoginSession *string    `json:"login_session" db:"login_session"`
+	LastLogin    *time.Time `json:"last_login" db:"last_login"`
+	CurrencyId   *int       `json:"currency_id" db:"currency_id"`
+	LanguageId   *int       `json:"language_id" db:"language_id"`
+	StatusId     int        `json:"status_id" db:"status_id"`
+	Order        int        `json:"order" db:"order"`
+	CreatedBy    int        `json:"created_by" db:"created_by"`
+	CreatedAt    time.Time  `json:"created_at" db:"created_at"`
+	UpdatedBy    int        `json:"updated_by" db:"updated_by"`
+	UpdatedAt    time.Time  `json:"updated_at" db:"updated_at"`
+	DeletedBy    int        `json:"deleted_by" db:"deleted_by"`
+	DeletedAt    *time.Time `json:"deleted_at" db:"deleted_at"`
+}
 
 type LoginRequest struct {
 	Username string `json:"username"`
@@ -32,7 +59,7 @@ func (r *AuthRequest) bind(c fiber.Ctx, v *utls.Validator) error {
 
 type AuthResponse struct {
 	// Tag field (is basicly functions)
-	IsSucces bool  	`json:"is_success"`
+	IsSucces bool   `json:"is_success"`
 	Username string `json:"username"`
 	Password string `json:"password"`
 }

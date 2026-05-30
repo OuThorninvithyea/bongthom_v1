@@ -1,9 +1,9 @@
 package auth
 
 import (
-	//Community pacakges
-	"github.com/jmoiron/sqlx"
 	error_responses "admin-api/pkg/responses"
+
+	"github.com/jmoiron/sqlx"
 )
 
 type AuthServiceImpl struct {
@@ -21,6 +21,6 @@ func NewAuthServiceImpl(db *sqlx.DB) *AuthServiceImpl {
 	}
 }
 
-func (s *AuthServiceImpl) Login(username, password string) (*AuthLoginReponse, *error_responses.ErrorResponse) {
+func (s *AuthServiceImpl) Login(username string, password string) (*AuthLoginReponse, *error_responses.ErrorResponse) {
 	return s.Repo.Login(username, password)
 }

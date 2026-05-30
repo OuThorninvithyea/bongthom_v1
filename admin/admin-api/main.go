@@ -5,10 +5,10 @@ import (
 	"fmt"
 	// Internal packages
 	config "admin-api/configs"
-	"admin-api/pkg/logs"
-	"admin-api/configs/databases"
+	database "admin-api/configs/databases"
 	"admin-api/handler"
 	"admin-api/internal/admin/websocket"
+	"admin-api/pkg/logs"
 	"admin-api/pkg/translate"
 	"admin-api/router"
 )
@@ -26,12 +26,12 @@ func main() {
 
 	// SetupRouter
 	app := router.New()
-	
+
 	// Initialize translate
-if err := translate.Init(); err != nil {
-    logs.NewCustomLog("FailedInitializeI18n", err.Err.Error(), "error")
-  	}
-	
+	if err := translate.Init(); err != nil {
+		logs.NewCustomLog("FailedInitializeI18n", err.Err.Error(), "error")
+	}
+
 	// Initalize service handlers e.g 'admin', 'front'
 	h := handler.NewServiceHandlers(app, db_pool, ws_manager)
 	_ = h
