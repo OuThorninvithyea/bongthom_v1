@@ -2,6 +2,9 @@ package auth
 
 import (
 	// Commnuity Packages
+	"errors"
+
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v3"
 	"github.com/jmoiron/sqlx"
 
@@ -30,6 +33,19 @@ func (a *AuthHandler) Login(c fiber.Ctx) error {
 	// validator is dev package,
 	v := utls.NewValidator()
 	if err := req.bind(c, v); err != nil {
+		var ve validator.ValidationErrors
+		if errors.As(err, &ve) {
+			fe := ve[0]
+			msg, _ := translate.TranslateWithError(c, "validation_"+fe.Tag(),
+				map[string]any{
+					"Field": fe.Field(),
+					"Param": fe.Param(),
+				})
+
+			return c.Status(fiber.StatusBadRequest).JSON(
+				response.NewResponseError(msg, constants.Login_invalid, err),
+			)
+		}
 		return err
 	}
 

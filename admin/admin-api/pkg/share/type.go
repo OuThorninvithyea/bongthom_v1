@@ -21,24 +21,16 @@ type Paging struct {
 	Perpage int `json:"per_page" query:"per_page" validate:"required,min=1"`
 }
 
+// Sort products price and asc to desc 
 type Sort struct {
-	Property  string `json:"property" validate:"required"`
-	Direction string `json:"direction" validate:"required,oneof=asc desc"`
-}
-type Filter struct {
-	Property string      `json:"property" validate:"required" query:"property"`
-	Value    interface{} `json:"value" validate:"required" query:"value"`
+	Property  string `json:"property" validate:"required"`  // column database tables
+	Direction string `json:"direction" validate:"required,oneof=asc desc"` // keyword database  ORDER BY asc desc
 }
 
-type Platform struct {
-	ID                   uint64 `json:"id"`
-	PlatformName         string `json:"platform_name"`
-	PlatformHost         string `json:"platform_host"`
-	PlatformToken        string `json:"platform_token"`
-	PlatformExtraPayload string `json:"platform_extra_payload"`
-	InternalToken        string `json:"internal_token"`
-	StatusID             uint64 `json:"status_id"`
-	Order                uint64 `json:"order"`
+// Fitler  or Search products 
+type Filter struct {
+	Property string      `json:"property" validate:"required" query:"property"` // column database tables
+	Value    interface{} `json:"value" validate:"required" query:"value"` // value data in row table 
 }
 
 type Status struct {
