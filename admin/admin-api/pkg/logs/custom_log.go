@@ -2,9 +2,10 @@ package logs
 
 import (
 	"fmt"
+	"runtime"
+  
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"runtime"
 )
 
 type CustomLog struct {
@@ -15,12 +16,14 @@ type CustomLog struct {
 	Line      int
 }
 
+
 func (e *CustomLog) LogToString() string {
 	return fmt.Sprintf("MessageID: %s,LogReason:%s, Funtion: %s, File: %s, Line: %d",
 		e.MessageID, e.LogReason, e.Function, e.File, e.Line)
 }
 
 func NewCustomLog(messageID string, logDesc string, logType ...string) *CustomLog {
+	
 	pc, file, line, ok := runtime.Caller(1)
 	function := "unknown"
 	if ok {

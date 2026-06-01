@@ -3,7 +3,7 @@ package auth
 import (
 	// Commnunity Pacakges
 	"time"
-
+	
 	"github.com/gofiber/fiber/v3"
 
 	// Internal Packages
@@ -19,18 +19,18 @@ type Auth struct {
 	Email        *string    `json:"email" db:"email"`
 	Password     string     `json:"-" db:"password"`
 	RoleName     string     `json:"role_name" db:"role_name"`
-	RoleId       int        `json:"role_id" db:"role_id"`
+	RoleID       int        `json:"role_id" db:"role_id"`
 	IsAdmin      bool       `json:"is_admin" db:"is_admin"`
-	LoginSession *string    `json:"login_session" db:"login_session"`
+	LoginSession *string    `json:"-" db:"login_session"`
 	LastLogin    *time.Time `json:"last_login" db:"last_login"`
-	CurrencyId   *int       `json:"currency_id" db:"currency_id"`
-	LanguageId   *int       `json:"language_id" db:"language_id"`
-	StatusId     int        `json:"status_id" db:"status_id"`
+	CurrencyID   *int       `json:"currency_id" db:"currency_id"`
+	LanguageID   *int       `json:"language_id" db:"language_id"`
+	StatusID     int        `json:"status_id" db:"status_id"`
 	Order        int        `json:"order" db:"order"`
 	CreatedBy    int        `json:"created_by" db:"created_by"`
 	CreatedAt    time.Time  `json:"created_at" db:"created_at"`
 	UpdatedBy    int        `json:"updated_by" db:"updated_by"`
-	UpdatedAt    time.Time  `json:"updated_at" db:"updated_at"`
+	UpdatedAt    *time.Time `json:"updated_at" db:"updated_at"`
 	DeletedBy    int        `json:"deleted_by" db:"deleted_by"`
 	DeletedAt    *time.Time `json:"deleted_at" db:"deleted_at"`
 }

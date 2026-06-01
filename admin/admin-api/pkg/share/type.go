@@ -6,8 +6,27 @@ import (
 	"time"
 )
 
+type UserFromCreate struct {
+	Firstname   string
+	LastName    string
+	Nationality Nationality
+}
+
+type UserFormUpdate struct {
+	ID            int64
+	FirstName     string
+	LastName      string
+	NationalityID int
+	Nationality   Nationality
+}
+
+type Nationality struct {
+	ID    int64
+	Value string
+}
+
 type UserContext struct {
-	UserID       float64   `json:"user_id"`
+	UserID       int64     `json:"user_id"`
 	UserName     string    `json:"user_name"`
 	LoginSession string    `json:"login_session"`
 	Exp          time.Time `json:"exp"`
@@ -21,16 +40,16 @@ type Paging struct {
 	Perpage int `json:"per_page" query:"per_page" validate:"required,min=1"`
 }
 
-// Sort products price and asc to desc 
+// Sort products price and asc to desc
 type Sort struct {
-	Property  string `json:"property" validate:"required"`  // column database tables
+	Property  string `json:"property" validate:"required"`                 // column database tables
 	Direction string `json:"direction" validate:"required,oneof=asc desc"` // keyword database  ORDER BY asc desc
 }
 
-// Fitler  or Search products 
+// Fitler  or Search products
 type Filter struct {
 	Property string      `json:"property" validate:"required" query:"property"` // column database tables
-	Value    interface{} `json:"value" validate:"required" query:"value"` // value data in row table 
+	Value    interface{} `json:"value" validate:"required" query:"value"`       // value data in row table
 }
 
 type Status struct {

@@ -1,26 +1,99 @@
 package auth
 
-import (
-	error_responses "admin-api/pkg/responses"
+// SERVICE LAYER — business logic and orchestration.
+// No HTTP. No SQL. Just decisions and coordination.
+// Calls repositories for data, makes decisions, returns results.
+//
+// Example: "User wants to log in? Call repo to find them → generate
+//          UUID session → sign a JWT → tell repo to store the session."
 
+import (
+	// Community pacakges
+
+	"context"
+	"fmt"
+	"os"
+	"time"
+
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
+	"github.com/redis/go-redis/v9"
+
+	// internal pacakges
+	jwtauth "admin-api/pkg/common/auth"
+	error_responses "admin-api/pkg/responses"
 )
 
 type AuthServiceImpl struct {
-	Repo AuthRepo
+	Repo  AuthRepo
+	Redis *redis.Client
 }
 
 type AuthService interface {
 	Login(username string, password string) (*AuthLoginReponse, *error_responses.ErrorResponse)
+	CheckSession(loginSession string, userID int64) (*Auth, *error_responses.ErrorResponse)
 }
 
-func NewAuthServiceImpl(db *sqlx.DB) *AuthServiceImpl {
+func NewAuthServiceImpl(db *sqlx.DB, rdb *redis.Client) *AuthServiceImpl {
 	r := NewAuthRepoImpl(db)
 	return &AuthServiceImpl{
-		Repo: r,
+		Repo:  r,
+		Redis: rdb,
 	}
 }
 
 func (s *AuthServiceImpl) Login(username string, password string) (*AuthLoginReponse, *error_responses.ErrorResponse) {
-	return s.Repo.Login(username, password)
+	msg := error_responses.ErrorResponse{}
+
+	// Step 1: find user (repo only does DB work)
+	user, err := s.Repo.Login(username, password)
+	if err != nil {
+		return nil, err
+	}
+
+	// Step 2: generate login session UUID
+	loginSession := uuid.New().String()
+
+	// Step 3: read JWT secret
+	secret := os.Getenv("JWT_SECRET_KEY")
+	if secret == "" {
+		secret = "change-me-in-production"
+	}
+
+	// Step 5: generate access token (business logic — lives in service)
+	accessToken, _, jerr := jwtauth.GenerateToken(
+		user.ID, user.UserName, loginSession, user.RoleID,
+		secret, 15*time.Minute,
+	)
+	if jerr != nil {
+		return nil, msg.NewErrorResponse("token_generation_failed", jerr)
+	}
+
+	// Step 5: store login session in Redis
+	s.Redis.Set(context.Background(),
+		fmt.Sprintf("session:%d", user.ID), loginSession,
+		0, // no expiry — lives until manual delete
+	)
+
+	// Step 6: store login session in database (audit trail)
+	if err := s.Repo.UpdateLoginSession(user.ID, loginSession); err != nil {
+		return nil, err
+	}
+
+	var au AuthLoginReponse
+	au.Auth.Token = accessToken
+	au.Auth.TokenType = "jwt"
+	return &au, nil
+}
+
+func (s *AuthServiceImpl) CheckSession(loginSession string, userID int64) (*Auth, *error_responses.ErrorResponse) {
+	msg := error_responses.ErrorResponse{}
+
+	key := fmt.Sprintf("session:%d", userID)
+	stored, err := s.Redis.Get(context.Background(), key).Result()
+	if err != nil || stored != loginSession {
+		return nil, msg.NewErrorResponse("invalid_session", fmt.Errorf("session mismatch"))
+	}
+
+	return &Auth{ID: userID}, nil
 }

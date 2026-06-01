@@ -4,9 +4,11 @@ import (
 	// Community packages
 	"github.com/gofiber/fiber/v3"
 	"github.com/jmoiron/sqlx"
+	"github.com/redis/go-redis/v9"
 
 	// Internal packages
 	"admin-api/internal/admin/auth"
+	"admin-api/internal/admin/user"
 	"admin-api/internal/admin/websocket"
 )
 
@@ -15,21 +17,24 @@ type ServiceHandlers struct {
 	Front *FrontService
 }
 
-func NewServiceHandlers(a *fiber.App, db *sqlx.DB, wsmgr *websocket.WebSocketManager) *ServiceHandlers {
+func NewServiceHandlers(a *fiber.App, db *sqlx.DB, rdb *redis.Client, wsmgr *websocket.WebSocketManager) *ServiceHandlers {
 	return &ServiceHandlers{
-		Admin: NewAdminService(a, db, wsmgr),
+		Admin: NewAdminService(a, db, rdb, wsmgr),
 		Front: NewFrontService(a),
 	}
 }
 
 type AdminService struct {
-	Auth *auth.AuthRoute // moduel of its project
+	Auth *auth.AuthRoute
+	User *user.UserRoute
 }
 
-func NewAdminService(a *fiber.App, db *sqlx.DB, wsmgr *websocket.WebSocketManager) *AdminService {
-	authRoute := auth.NewAuthRoute(a, db)
+func NewAdminService(a *fiber.App, db *sqlx.DB, rdb *redis.Client, wsmgr *websocket.WebSocketManager) *AdminService {
+	authRoute := auth.NewAuthRoute(a, db, rdb)
+	userRoute := user.NewUserRoute(a, db, rdb)
 	return &AdminService{
 		Auth: authRoute,
+		User: userRoute,
 	}
 }
 

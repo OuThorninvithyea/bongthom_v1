@@ -1,19 +1,19 @@
 package auth
 
 import (
-	// Community Packages
 	"github.com/gofiber/fiber/v3"
 	"github.com/jmoiron/sqlx"
+	"github.com/redis/go-redis/v9"
 )
 
 type AuthRoute struct {
-	Handler *AuthHandler
+	handler *AuthHandler
 }
 
-func NewAuthRoute(a *fiber.App, db *sqlx.DB) *AuthRoute {
-	h := NewAuthHandler(a, db)
+func NewAuthRoute(a *fiber.App, db *sqlx.DB, rdb *redis.Client) *AuthRoute {
+	h := NewAuthHandler(a, db, rdb)
 	a.Post("api/v1/admin/auth/login", h.Login)
 	return &AuthRoute{
-		Handler: h,
+		handler: h,
 	}
 }

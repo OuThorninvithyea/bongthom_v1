@@ -1,5 +1,11 @@
 package auth
 
+// HANDLER LAYER — HTTP only. No business logic. No SQL.
+// Job: bind JSON → validate input → call service → translate errors → respond.
+//
+// Example: "POST /login {username, password} → is username ≥4 chars?
+//          → call service.Login() → translate result → return JSON"
+
 import (
 	// Commnuity Packages
 	"errors"
@@ -7,6 +13,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v3"
 	"github.com/jmoiron/sqlx"
+	"github.com/redis/go-redis/v9"
 
 	// Internal Packages
 	constants "admin-api/pkg/constants"
@@ -19,12 +26,14 @@ type AuthHandler struct {
 	Services AuthService
 }
 
-func NewAuthHandler(a *fiber.App, db *sqlx.DB) *AuthHandler {
-	s := NewAuthServiceImpl(db)
+func NewAuthHandler(a *fiber.App, db *sqlx.DB, rdb *redis.Client) *AuthHandler {
+	s := NewAuthServiceImpl(db, rdb)
 	return &AuthHandler{
 		Services: s,
 	}
 }
+
+// handler -> service -> repository
 
 // payload = http body response // request
 func (a *AuthHandler) Login(c fiber.Ctx) error {
@@ -70,6 +79,7 @@ func (a *AuthHandler) Login(c fiber.Ctx) error {
 				e.Err,
 			),
 		)
+
 	} else {
 		msg, e_msg := translate.TranslateWithError(c, "login_success")
 		if e_msg != nil {
@@ -87,21 +97,3 @@ func (a *AuthHandler) Login(c fiber.Ctx) error {
 	}
 
 }
-
-// func (a *AuthHandler) CheckStats(c fiber.Ctx) error  {
-// 	if e != nil {
-// 		c.Status(fiber.StatusInternalServerError)
-// 		return  c.JSON(fiber.Map {
-// 			"success": false,
-// 			"message": "msg_failed",
-// 			"status_code": 3000,
-// 			"data": "The stats info is no showing. Please tryagain later",
-// 		})
-// 	} else {
-// 		return c.JSON(fiber.Map {
-// 			"success": true,
-// 			"message": "Status are showing",
-// 			"data":
-// 		})
-// 	}
-// }
