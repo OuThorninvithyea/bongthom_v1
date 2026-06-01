@@ -5,4 +5,10 @@ const (
 	Login_failed  = 3000
 	Login_invalid = 3001
 	Login_success = 9000
+
+	// generic
+	Generic_success  = 2000
+	Generic_error    = 5000
+	Generic_invalid  = 5001
+	Generic_notFound = 5002
 )

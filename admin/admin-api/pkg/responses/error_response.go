@@ -16,9 +16,9 @@ func (e *ErrorResponse) ErrorString() string {
 	return fmt.Sprintf("MessageId: %s, Error:%v", e.MessageID, e.Err)
 }
 
-func (e *ErrorResponse) NewErrorResponse(messageId string, err error) *ErrorResponse {
+func (e *ErrorResponse) NewErrorResponse(messageID string, err error) *ErrorResponse {
 	return &ErrorResponse{
-		MessageID: messageId,
+		MessageID: messageID,
 		Err:       err,
 	}
 }

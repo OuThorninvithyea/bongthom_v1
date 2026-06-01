@@ -26,8 +26,8 @@ func GenerateToken(userID int64, userName string, loginSession string, roleID in
 		LoginSession: loginSession,
 		RoleID:       roleID,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(expiresAt),
-			IssuedAt:  jwt.NewNumericDate(now),
+		ExpiresAt: jwt.NewNumericDate(expiresAt),
+		IssuedAt:  jwt.NewNumericDate(now),
 		},
 	}
 
