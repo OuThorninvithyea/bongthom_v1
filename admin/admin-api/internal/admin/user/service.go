@@ -1,12 +1,15 @@
 package user
 
 import (
-	"fmt"
 
+	// Commmnuity pacagkes
+	"fmt"
+	
 	"github.com/jmoiron/sqlx"
 	"github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/bcrypt"
 
+	// Internal pacakges
 	error_responses "admin-api/pkg/responses"
 )
 

@@ -1,6 +1,8 @@
 package user
 
 import (
+
+	// Community pacakges
 	"time"
 )
 
@@ -15,12 +17,12 @@ type User struct {
 	RoleName     string     `json:"role_name" db:"role_name"`
 	RoleID       int        `json:"role_id" db:"role_id"`
 	IsAdmin      bool       `json:"is_admin" db:"is_admin"`
-	LoginSession *string    `json:"login_session" db:"login_session"`
+	LoginSession *string    `json:"-" db:"login_session"`
 	LastLogin    *time.Time `json:"last_login" db:"last_login"`
 	CurrencyID   *int       `json:"currency_id" db:"currency_id"`
 	LanguageID   *int       `json:"language_id" db:"language_id"`
-	StatusID     int        `json:"status_id" db:"status_id"`
-	Order        int        `json:"order" db:"order"`
+	StatusID     *int       `json:"status_id" db:"status_id"`
+	Order        *int       `json:"order" db:"order"`
 	CreatedBy    *int64     `json:"-" db:"created_by"`
 	CreatedAt    time.Time  `json:"created_at" db:"created_at"`
 	UpdatedBy    *int64     `json:"-" db:"updated_by"`
@@ -65,7 +67,7 @@ type UserResponse struct {
 	CreatedAt time.Time  `json:"created_at"`
 }
 
-type PagingRequest struct {
+	type PagingRequest struct {
 	Page    int `query:"page" validate:"min=1"`
 	PerPage int `query:"per_page" validate:"min=1,max=100"`
 }

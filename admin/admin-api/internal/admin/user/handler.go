@@ -1,6 +1,8 @@
 package user
 
 import (
+
+	// Commnuity Pacakges
 	"strconv"
 
 	"github.com/go-playground/validator/v10"
@@ -8,6 +10,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/redis/go-redis/v9"
 
+	// Internal pacakges
 	constants "admin-api/pkg/constants"
 	response "admin-api/pkg/http"
 	"admin-api/pkg/utls"
@@ -27,7 +30,14 @@ func NewUserHandler(db *sqlx.DB, rdb *redis.Client) *UserHandler {
 func (h *UserHandler) Show(c fiber.Ctx) error {
 	var paging PagingRequest
 	if err := c.Bind().Query(&paging); err != nil {
-		return err
+		paging.Page = 1
+		paging.PerPage = 20
+	}
+	if paging.Page < 1 {
+		paging.Page = 1
+	}
+	if paging.PerPage < 1 {
+		paging.PerPage = 20
 	}
 
 	users, total, err := h.Service.List(paging.Page, paging.PerPage)
