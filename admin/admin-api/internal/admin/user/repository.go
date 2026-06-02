@@ -1,6 +1,8 @@
 package user
 
 import (
+
+	// Community pacakges
 	"fmt"
 	"strings"
 
@@ -36,7 +38,7 @@ func (r *UserRepoImpl) FindAll(page, perPage int) ([]User, int, *error_responses
 	var users []User
 	err := r.db.Select(&users,
 		`SELECT id, user_name, first_name, last_name, email, role_name, role_id, is_admin,
-		  login_session, last_login, currency_id, language_id, status_id, created_at, updated_at
+		 login_session, last_login, currency_id, language_id, status_id, created_at, updated_at
 		 FROM tbl_users
 		 WHERE deleted_at IS NULL
 		 ORDER BY id ASC

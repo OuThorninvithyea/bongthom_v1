@@ -1,6 +1,8 @@
 package middlewares
 
 import (
+	"fmt"
+	"net/http"
 	"os"
 	"strings"
 
@@ -10,42 +12,54 @@ import (
 
 	"admin-api/internal/admin/auth"
 	jwtauth "admin-api/pkg/common/auth"
+	response "admin-api/pkg/http"
 	types "admin-api/pkg/share"
+	"admin-api/pkg/utls"
 )
 
-// skipAuthRoutes — public endpoints that don't need a token
-var skipAuthRoutes = []string{
-	"/api/v1/admin/auth/login",
-	"/api/v1/admin/auth/refresh",
-}
-
-func shouldSkip(path string) bool {
-	for _, r := range skipAuthRoutes {
-		if strings.HasPrefix(path, r) {
-			return true
-		}
-	}
-	return false
-}
-
 // NewJwtMiddleware validates every request using our ValidateToken
-func NewJwtMiddleware(app *fiber.App, db *sqlx.DB, rdb *redis.Client) {
+func NewJwtMiddleware(app *fiber.App, db *sqlx.DB, redis *redis.Client) {
 	secret := os.Getenv("JWT_SECRET_KEY")
 	if secret == "" {
-		secret = "change-me-in-production"
+		panic("JWT_SECRET_KEY not set in .env")
 	}
 
-	// Single middleware for both HTTP and WebSocket
 	app.Use(func(c fiber.Ctx) error {
-		// Skip auth for public routes
-		if shouldSkip(c.Path()) {
+		// WebSocket auth — extract from Sec-WebSocket-Protocol
+		if c.Get("Upgrade") == "websocket" {
+			protocol := c.Get("Sec-WebSocket-Protocol")
+			if protocol == "" {
+				return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
+					"error": "Missing WebSocket protocol for authentication",
+				})
+			}
+
+			parts := strings.Split(protocol, ",")
+			if len(parts) < 2 {
+				return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
+					"error": "Invalid WebSocket auth format",
+				})
+			}
+
+			tokenString := strings.TrimPrefix(strings.TrimSpace(parts[1]), "Bearer ")
+			claims, err := jwtauth.ValidateToken(tokenString, secret)
+			if err != nil {
+				return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
+					"error": "Invalid or expired token",
+				})
+			}
+
+			return handleContext(c, claims, db, redis)
+		}
+
+		// HTTP auth — extract from Authorization header
+		if c.Path() == "/api/v1/admin/auth/login" {
 			return c.Next()
 		}
 
-		// Extract token from Authorization header
 		authHeader := c.Get("Authorization")
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
 				"success":     false,
 				"message":     "Missing or invalid Authorization header",
 				"status_code": 4001,
@@ -53,39 +67,52 @@ func NewJwtMiddleware(app *fiber.App, db *sqlx.DB, rdb *redis.Client) {
 		}
 
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-
-		// Validate using our JWT lib (HMAC check + signature + expiry)
 		claims, err := jwtauth.ValidateToken(tokenString, secret)
 		if err != nil {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
 				"success":     false,
 				"message":     "Invalid or expired token",
 				"status_code": 4002,
 			})
 		}
 
-		// Build UserContext from claims
-		uCtx := types.UserContext{
-			UserID:       claims.UserID,
-			UserName:     claims.UserName,
-			LoginSession: claims.LoginSession,
-			RoleID:       claims.RoleID,
-			UserAgent:    c.Get("User-Agent", "unknown"),
-			Ip:           c.IP(),
-		}
-
-		// Check session via Redis (sub-ms)
-		sv := auth.NewAuthServiceImpl(db, rdb)
-		if _, err := sv.CheckSession(uCtx.LoginSession, uCtx.UserID); err != nil {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"success":     false,
-				"message":     "Session expired or invalid",
-				"status_code": 4003,
-			})
-		}
-
-		// Inject user context for downstream handlers
-		c.Locals("UserContext", uCtx)
-		return c.Next()
+		return handleContext(c, claims, db, redis)
 	})
+}
+
+func handleContext(c fiber.Ctx, claims *jwtauth.Claims, db *sqlx.DB, redis *redis.Client) error {
+	// Validate login session exists
+	if claims.LoginSession == "" {
+		return c.Status(http.StatusUnprocessableEntity).JSON(
+			response.NewResponseError(
+				utls.Translate("loginSessionMissing", nil, c),
+				4003,
+				fmt.Errorf("missing login session"),
+			),
+		)
+	}
+
+	// Build user context from JWT claims
+	uCtx := types.UserContext{
+		UserID:       claims.UserID,
+		UserName:     claims.UserName,
+		LoginSession: claims.LoginSession,
+		RoleID:       claims.RoleID,
+		UserAgent:    c.Get("User-Agent", "unknown"),
+		Ip:           c.IP(),
+	}
+
+	// Check session via Redis (sub-ms)
+	sv := auth.NewAuthServiceImpl(db, redis)
+	if _, err := sv.CheckSession(uCtx.LoginSession, uCtx.UserID); err != nil {
+		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
+			"success":     false,
+			"message":     "Session expired or invalid",
+			"status_code": 4003,
+		})
+	}
+
+	// Inject user context for downstream handlers
+	c.Locals("UserContext", uCtx)
+	return c.Next()
 }

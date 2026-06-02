@@ -25,7 +25,7 @@ type Auth struct {
 	LastLogin    *time.Time `json:"last_login" db:"last_login"`
 	CurrencyID   *int       `json:"currency_id" db:"currency_id"`
 	LanguageID   *int       `json:"language_id" db:"language_id"`
-	StatusID     int        `json:"status_id" db:"status_id"`
+	StatusID     *int       `json:"status_id" db:"status_id"`
 	Order        int        `json:"order" db:"order"`
 	CreatedBy    int        `json:"created_by" db:"created_by"`
 	CreatedAt    time.Time  `json:"created_at" db:"created_at"`
