@@ -1,15 +1,12 @@
 package user
 
 import (
-
-	// Commmnuity pacagkes
 	"fmt"
-	
+
 	"github.com/jmoiron/sqlx"
 	"github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/bcrypt"
 
-	// Internal pacakges
 	error_responses "admin-api/pkg/responses"
 )
 
@@ -42,18 +39,18 @@ func (s *UserServiceImpl) List(page, perPage int) ([]User, int, *error_responses
 	if perPage < 1 || perPage > 100 {
 		perPage = 20
 	}
-	return s.Repo.FindAll(page, perPage)
+	return s.Repo.GetAll(page, perPage)
 }
 
 func (s *UserServiceImpl) GetByID(id int64) (*User, *error_responses.ErrorResponse) {
-	return s.Repo.FindByID(id)
+	return s.Repo.GetByID(id)
 }
 
 func (s *UserServiceImpl) Create(req *CreateUserRequest, createdBy int64) (*User, *error_responses.ErrorResponse) {
 	msg := error_responses.ErrorResponse{}
 
 	// Check duplicate username
-	existing, _ := s.Repo.FindByUserName(req.UserName)
+	existing, _ := s.Repo.GetByUserName(req.UserName)
 	if existing != nil {
 		return nil, msg.NewErrorResponse("user_name_taken", fmt.Errorf("username exists"))
 	}
@@ -133,5 +130,5 @@ func (s *UserServiceImpl) GetCreateForm() any {
 }
 
 func (s *UserServiceImpl) GetUpdateForm(id int64) (*User, *error_responses.ErrorResponse) {
-	return s.Repo.FindByID(id)
+	return s.Repo.GetByID(id)
 }

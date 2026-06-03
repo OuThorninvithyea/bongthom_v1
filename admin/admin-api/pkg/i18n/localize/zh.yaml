@@ -9,6 +9,16 @@ user_name_taken: "用户名已被使用"
 password_hash_failed: "密码加密失败"
 no_updates_provided: "没有提供更新内容"
 
+# module user
+users_retrieved: "已获取用户列表"
+user_retrieved: "已获取用户"
+user_created: "已创建用户"
+user_updated: "已更新用户"
+user_deleted: "已删除用户"
+invalid_user_id: "无效的用户ID"
+form_create_retrieved: "已获取创建表单"
+form_update_retrieved: "已获取更新表单"
+
 validation_min: "{{.Field}} 至少需要 {{.Param}} 个字符"
 validation_required: "{{.Field}} 为必填项"
 

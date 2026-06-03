@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/jmoiron/sqlx"
@@ -17,15 +18,14 @@ import (
 	"admin-api/pkg/utls"
 )
 
-// NewJwtMiddleware validates every request using our ValidateToken
 func NewJwtMiddleware(app *fiber.App, db *sqlx.DB, redis *redis.Client) {
 	secret := os.Getenv("JWT_SECRET_KEY")
 	if secret == "" {
-		panic("JWT_SECRET_KEY not set in .env")
+		panic("JWT_SECRET_KEY not set")
 	}
 
 	app.Use(func(c fiber.Ctx) error {
-		// WebSocket auth — extract from Sec-WebSocket-Protocol
+		// WebSocket auth
 		if c.Get("Upgrade") == "websocket" {
 			protocol := c.Get("Sec-WebSocket-Protocol")
 			if protocol == "" {
@@ -35,28 +35,33 @@ func NewJwtMiddleware(app *fiber.App, db *sqlx.DB, redis *redis.Client) {
 			}
 
 			parts := strings.Split(protocol, ",")
-			if len(parts) < 2 {
+			if len(parts) != 2 || strings.TrimSpace(parts[0]) != "Bearer" {
 				return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
-					"error": "Invalid WebSocket auth format",
+					"error": "Invalid WebSocket protocol authentication format",
 				})
 			}
 
-			tokenString := strings.TrimPrefix(strings.TrimSpace(parts[1]), "Bearer ")
+			tokenString := strings.TrimSpace(parts[1])
+
 			claims, err := jwtauth.ValidateToken(tokenString, secret)
 			if err != nil {
 				return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
-					"error": "Invalid or expired token",
+					"error": "Invalid or expired JWT token",
 				})
 			}
 
-			return handleContext(c, claims, db, redis)
+			c.Locals("jwt_claims", claims)
+			c.Set("Sec-WebSocket-Protocol", "Bearer")
+
+			return handleUserContext(c, claims, db, redis)
 		}
 
-		// HTTP auth — extract from Authorization header
+		// Skip auth for login
 		if c.Path() == "/api/v1/admin/auth/login" {
 			return c.Next()
 		}
 
+		// HTTP auth
 		authHeader := c.Get("Authorization")
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
 			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
@@ -67,6 +72,7 @@ func NewJwtMiddleware(app *fiber.App, db *sqlx.DB, redis *redis.Client) {
 		}
 
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+
 		claims, err := jwtauth.ValidateToken(tokenString, secret)
 		if err != nil {
 			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
@@ -76,13 +82,14 @@ func NewJwtMiddleware(app *fiber.App, db *sqlx.DB, redis *redis.Client) {
 			})
 		}
 
-		return handleContext(c, claims, db, redis)
+		c.Locals("jwt_claims", claims)
+		return handleUserContext(c, claims, db, redis)
 	})
 }
 
-func handleContext(c fiber.Ctx, claims *jwtauth.Claims, db *sqlx.DB, redis *redis.Client) error {
-	// Validate login session exists
-	if claims.LoginSession == "" {
+func handleUserContext(c fiber.Ctx, claims *jwtauth.Claims, db *sqlx.DB, redis *redis.Client) error {
+	loginSession := claims.LoginSession
+	if loginSession == "" {
 		return c.Status(http.StatusUnprocessableEntity).JSON(
 			response.NewResponseError(
 				utls.Translate("loginSessionMissing", nil, c),
@@ -92,19 +99,19 @@ func handleContext(c fiber.Ctx, claims *jwtauth.Claims, db *sqlx.DB, redis *redi
 		)
 	}
 
-	// Build user context from JWT claims
 	uCtx := types.UserContext{
 		UserID:       claims.UserID,
 		UserName:     claims.UserName,
-		LoginSession: claims.LoginSession,
 		RoleID:       claims.RoleID,
+		LoginSession: claims.LoginSession,
+		Exp:          time.Now(),
 		UserAgent:    c.Get("User-Agent", "unknown"),
 		Ip:           c.IP(),
 	}
+	c.Locals("UserContext", uCtx)
 
-	// Check session via Redis (sub-ms)
 	sv := auth.NewAuthServiceImpl(db, redis)
-	if _, err := sv.CheckSession(uCtx.LoginSession, uCtx.UserID); err != nil {
+	if _, err := sv.CheckSession(loginSession, claims.UserID); err != nil {
 		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
 			"success":     false,
 			"message":     "Session expired or invalid",
@@ -112,7 +119,5 @@ func handleContext(c fiber.Ctx, claims *jwtauth.Claims, db *sqlx.DB, redis *redi
 		})
 	}
 
-	// Inject user context for downstream handlers
-	c.Locals("UserContext", uCtx)
 	return c.Next()
 }
