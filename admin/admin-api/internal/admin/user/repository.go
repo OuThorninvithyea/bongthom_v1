@@ -8,13 +8,14 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
+	// Interntal pacakges
 	error_responses "admin-api/pkg/responses"
 )
 
 type UserRepo interface {
-	FindAll(page, perPage int) ([]User, int, *error_responses.ErrorResponse)
-	FindByID(id int64) (*User, *error_responses.ErrorResponse)
-	FindByUserName(userName string) (*User, *error_responses.ErrorResponse)
+	GetAll(page, perPage int) ([]User, int, *error_responses.ErrorResponse)
+	GetByID(id int64) (*User, *error_responses.ErrorResponse)
+	GetByUserName(userName string) (*User, *error_responses.ErrorResponse)
 	Create(user *User) *error_responses.ErrorResponse
 	Update(id int64, updates map[string]any) (*User, *error_responses.ErrorResponse)
 	SoftDelete(id int64, deletedBy int64) *error_responses.ErrorResponse
@@ -28,7 +29,7 @@ func NewUserRepoImpl(db *sqlx.DB) UserRepo {
 	return &UserRepoImpl{db: db}
 }
 
-func (r *UserRepoImpl) FindAll(page, perPage int) ([]User, int, *error_responses.ErrorResponse) {
+func (r *UserRepoImpl) GetAll(page, perPage int) ([]User, int, *error_responses.ErrorResponse) {
 	msg := error_responses.ErrorResponse{}
 
 	var total int
@@ -52,7 +53,7 @@ func (r *UserRepoImpl) FindAll(page, perPage int) ([]User, int, *error_responses
 	return users, total, nil
 }
 
-func (r *UserRepoImpl) FindByID(id int64) (*User, *error_responses.ErrorResponse) {
+func (r *UserRepoImpl) GetByID(id int64) (*User, *error_responses.ErrorResponse) {
 	msg := error_responses.ErrorResponse{}
 
 	var user User
@@ -65,7 +66,7 @@ func (r *UserRepoImpl) FindByID(id int64) (*User, *error_responses.ErrorResponse
 	return &user, nil
 }
 
-func (r *UserRepoImpl) FindByUserName(userName string) (*User, *error_responses.ErrorResponse) {
+func (r *UserRepoImpl) GetByUserName(userName string) (*User, *error_responses.ErrorResponse) {
 	var user User
 	err := r.db.Get(&user,
 		`SELECT * FROM tbl_users WHERE user_name = $1 LIMIT 1`, userName,

@@ -21,7 +21,7 @@ func NewRedisClient() *redis.Client {
 		DB:       0,
 	})
 
-	// Verify connection
+	// Verify connection — crash if unavailable
 	if err := Client.Ping(context.Background()).Err(); err != nil {
 		panic("Redis connection failed: " + err.Error())
 	}

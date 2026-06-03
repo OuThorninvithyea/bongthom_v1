@@ -9,6 +9,16 @@ user_name_taken: "Username already taken"
 password_hash_failed: "Failed to hash password"
 no_updates_provided: "No updates provided"
 
+# module user
+users_retrieved: "Users retrieved"
+user_retrieved: "User retrieved"
+user_created: "User created"
+user_updated: "User updated"
+user_deleted: "User deleted"
+invalid_user_id: "Invalid user ID"
+form_create_retrieved: "Create form retrieved"
+form_update_retrieved: "Update form retrieved"
+
 validation_min: "{{.Field}} must be at least {{.Param}} characters"
 validation_required: "{{.Field}} is required"
 

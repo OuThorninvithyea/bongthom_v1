@@ -58,8 +58,6 @@ func initializeDB() {
 		log.Fatalf("Failed to ping the database: %v", err)
 	}
 
-	fmt.Println("Database Connected")
-
 	go listenForNotifications(DATABASE_URL)
 	go listenForUserNotifications(DATABASE_URL)
 
