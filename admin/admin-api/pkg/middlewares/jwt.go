@@ -1,6 +1,8 @@
 package middlewares
 
 import (
+
+	// Community pacakges
 	"fmt"
 	"net/http"
 	"os"
@@ -11,6 +13,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/redis/go-redis/v9"
 
+	// Internal pacakges
 	"admin-api/internal/admin/auth"
 	jwtauth "admin-api/pkg/common/auth"
 	response "admin-api/pkg/http"
@@ -111,7 +114,7 @@ func handleUserContext(c fiber.Ctx, claims *jwtauth.Claims, db *sqlx.DB, redis *
 	c.Locals("UserContext", uCtx)
 
 	sv := auth.NewAuthServiceImpl(db, redis)
-	if _, err := sv.CheckSession(loginSession, claims.UserID); err != nil {
+	if _, err := sv.CheckRedisSession(loginSession, claims.UserID); err != nil {
 		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
 			"success":     false,
 			"message":     "Session expired or invalid",

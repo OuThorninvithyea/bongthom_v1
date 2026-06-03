@@ -18,7 +18,8 @@ user_deleted: "បានលុបអ្នកប្រើប្រាស់"
 invalid_user_id: "លេខសម្គាល់អ្នកប្រើប្រាស់មិនត្រឹមត្រូវ"
 form_create_retrieved: "បានទាញយកទម្រង់បង្កើត"
 form_update_retrieved: "បានទាញយកទម្រង់ធ្វើបច្ចុប្បន្នភាព"
-
+translate_failed: "បកប្រែបរាជ័យ"
+invalid_request: "សំណើមិនត្រឹមត្រូវ៖"
 validation_min: "{{.Field}} ត្រូវមានយ៉ាងតិច {{.Param}} តួអក្សរ"
 validation_required: "{{.Field}} ត្រូវបំពេញ"
 

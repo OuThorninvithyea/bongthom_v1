@@ -10,6 +10,7 @@ import (
 	"admin-api/internal/admin/auth"
 	"admin-api/internal/admin/user"
 	"admin-api/internal/admin/websocket"
+	"admin-api/pkg/middlewares"
 )
 
 type ServiceHandlers struct {
@@ -30,8 +31,9 @@ type AdminService struct {
 }
 
 func NewAdminService(a *fiber.App, db *sqlx.DB, rdb *redis.Client, wsmgr *websocket.WebSocketManager) *AdminService {
-	authRoute := auth.NewAuthRoute(a, db, rdb)
-	userRoute := user.NewUserRoute(a, db, rdb)
+	authRoute := auth.NewAuthRoute(a, db, rdb) //
+	middlewares.NewJwtMiddleware(a, db, rdb)   // checking HTTP incoming request, { Header, body } as plant TEXT
+	userRoute := user.NewUserRoute(a, db, rdb) //
 	return &AdminService{
 		Auth: authRoute,
 		User: userRoute,

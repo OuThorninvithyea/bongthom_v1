@@ -3,14 +3,14 @@ package main
 import (
 	// Commnuity packages
 	"fmt"
+	
 	// Internal packages
 	config "admin-api/configs"
 	database "admin-api/configs/databases"
-	redisConfig "admin-api/configs/redis"
+	 "admin-api/configs/redis"
 	"admin-api/handler"
 	"admin-api/internal/admin/websocket"
 	"admin-api/pkg/logs"
-	"admin-api/pkg/middlewares"
 	"admin-api/pkg/translate"
 	"admin-api/router"
 )
@@ -24,7 +24,7 @@ func main() {
 	defer db_pool.Close()
 
 	// Initalize Redis
-	rdb := redisConfig.NewRedisClient()
+	rdb := redis.NewRedisClient()
 
 	// Initalize Websocket Manager
 	ws_manager := websocket.NewWebSocketManager()
@@ -37,8 +37,6 @@ func main() {
 		logs.NewCustomLog("FailedInitializeI18n", err.Err.Error(), "error")
 	}
 
-	// Wire JWT middleware BEFORE routes — protects all except login
-	middlewares.NewJwtMiddleware(app, db_pool, rdb)
 
 	// Initalize service handlers e.g 'admin', 'front'
 	h := handler.NewServiceHandlers(app, db_pool, rdb, ws_manager)

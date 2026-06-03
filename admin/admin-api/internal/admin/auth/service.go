@@ -1,15 +1,8 @@
 package auth
 
-// SERVICE LAYER — business logic and orchestration.
-// No HTTP. No SQL. Just decisions and coordination.
-// Calls repositories for data, makes decisions, returns results.
-//
-// Example: "User wants to log in? Call repo to find them → generate
-//          UUID session → sign a JWT → tell repo to store the session."
-
 import (
-	// Community pacakges
 
+	// Community pacakges
 	"context"
 	"fmt"
 	"os"
@@ -31,7 +24,7 @@ type AuthServiceImpl struct {
 
 type AuthService interface {
 	Login(username string, password string) (*AuthLoginReponse, *error_responses.ErrorResponse)
-	CheckSession(loginSession string, userID int64) (*Auth, *error_responses.ErrorResponse)
+	CheckRedisSession(loginSession string, userID int64) (*Auth, *error_responses.ErrorResponse)
 }
 
 func NewAuthServiceImpl(db *sqlx.DB, rdb *redis.Client) *AuthServiceImpl {
@@ -86,14 +79,22 @@ func (s *AuthServiceImpl) Login(username string, password string) (*AuthLoginRep
 	return &au, nil
 }
 
-func (s *AuthServiceImpl) CheckSession(loginSession string, userID int64) (*Auth, *error_responses.ErrorResponse) {
+func (s *AuthServiceImpl) CheckRedisSession(loginSession string, userID int64) (*Auth, *error_responses.ErrorResponse) {
 	msg := error_responses.ErrorResponse{}
 
+	// Fast path: Redis
 	key := fmt.Sprintf("session:%d", userID)
-	stored, err := s.Redis.Get(context.Background(), key).Result()
-	if err != nil || stored != loginSession {
-		return nil, msg.NewErrorResponse("invalid_session", fmt.Errorf("session mismatch"))
+	stored, redisErr := s.Redis.Get(context.Background(), key).Result()
+	if redisErr == nil && stored == loginSession {
+		return &Auth{ID: userID}, nil
 	}
 
-	return &Auth{ID: userID}, nil
+	// Slow path: PostgreSQL fallback (Redis down or key missing)
+	user, dbErr := s.Repo.CheckDatabaseLoginSession(userID, loginSession)
+	if dbErr == nil {
+		return user, nil
+	}
+
+	return nil, msg.NewErrorResponse("invalid_session", fmt.Errorf("session mismatch"))
 }
+	

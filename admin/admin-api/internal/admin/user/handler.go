@@ -30,19 +30,31 @@ func NewUserHandler(db *sqlx.DB, rdb *redis.Client) *UserHandler {
 
 // Show — GET /users
 func (h *UserHandler) Show(c fiber.Ctx) error {
-	var paging PagingRequest
-	if err := c.Bind().Query(&paging); err != nil {
-		paging.Page = 1
-		paging.PerPage = 20
-	}
-	if paging.Page < 1 {
-		paging.Page = 1
-	}
-	if paging.PerPage < 1 {
-		paging.PerPage = 20
+	var usersShowRequest UserShowRequest
+	v := utls.NewValidator()
+
+	if err := usersShowRequest.bind(c, v); err != nil {
+		msg, err_msg := translate.TranslateWithError(c, "invalid_request")
+		if err_msg != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(
+				response.NewResponseError(
+					err_msg.ErrorString(),
+					constants.Translate_Failed,
+					err_msg.Err,
+				),
+			)
+		}
+		return c.Status(fiber.StatusBadRequest).JSON(
+			response.NewResponseError(
+				msg,
+				constants.Invalid_request,
+				err,
+			),
+		)
 	}
 
-	users, total, e := h.Service.List(paging.Page, paging.PerPage)
+	users, e := h.Service.Show(usersShowRequest)
+
 	if e != nil {
 		msg, e_msg := translate.TranslateWithError(c, e.MessageID)
 		if e_msg != nil {
@@ -62,7 +74,7 @@ func (h *UserHandler) Show(c fiber.Ctx) error {
 		)
 	}
 	return c.Status(fiber.StatusOK).JSON(
-		response.NewResponseWithPaing(msg, constants.Generic_success, users, paging.Page, paging.PerPage, total),
+		response.NewResponseWithPaing(msg, constants.Generic_success, users, usersShowRequest.PageOption.Page, usersShowRequest.PageOption.Perpage, users.Total),
 	)
 }
 
@@ -76,7 +88,7 @@ func (h *UserHandler) ShowOne(c fiber.Ctx) error {
 		)
 	}
 
-	user, e := h.Service.GetByID(id)
+	user, e := h.Service.ShowOne(id)
 	if e != nil {
 		msg, e_msg := translate.TranslateWithError(c, e.MessageID)
 		if e_msg != nil {
@@ -101,11 +113,11 @@ func (h *UserHandler) ShowOne(c fiber.Ctx) error {
 }
 
 // CreateUser — POST /users/create
-func (h *UserHandler) CreateUser(c fiber.Ctx) error {
+func (h *UserHandler) Create(c fiber.Ctx) error {
 	req := &CreateUserRequest{}
 	v := utls.NewValidator()
 
-	if err := c.Bind().Body(req); err != nil {
+	if err := req.bind(c, v); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(
 			response.NewResponseError("Invalid request body", constants.Generic_invalid, err),
 		)
@@ -129,7 +141,7 @@ func (h *UserHandler) CreateUser(c fiber.Ctx) error {
 
 	var createdBy int64 = 1 // TODO: from JWT
 
-	user, e := h.Service.Create(req, createdBy)
+	e := h.Service.Create(req, createdBy)
 	if e != nil {
 		msg, e_msg := translate.TranslateWithError(c, e.MessageID)
 		if e_msg != nil {
@@ -149,12 +161,12 @@ func (h *UserHandler) CreateUser(c fiber.Ctx) error {
 		)
 	}
 	return c.Status(fiber.StatusCreated).JSON(
-		response.NewResponse(msg, constants.Generic_success, user),
+		response.NewResponse(msg, constants.Generic_success, true),
 	)
 }
 
 // UpdateUser — PUT /users/update/:id
-func (h *UserHandler) UpdateUser(c fiber.Ctx) error {
+func (h *UserHandler) Update(c fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil {
 		msg, _ := translate.TranslateWithError(c, "invalid_user_id")
@@ -197,7 +209,7 @@ func (h *UserHandler) UpdateUser(c fiber.Ctx) error {
 }
 
 // DeleteUser — DELETE /users/delete/:id
-func (h *UserHandler) DeleteUser(c fiber.Ctx) error {
+func (h *UserHandler) Delete(c fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil {
 		msg, _ := translate.TranslateWithError(c, "invalid_user_id")
