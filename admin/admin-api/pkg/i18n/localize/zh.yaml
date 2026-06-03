@@ -8,7 +8,9 @@ invalid_session: "会话无效或已过期"
 user_name_taken: "用户名已被使用"
 password_hash_failed: "密码加密失败"
 no_updates_provided: "没有提供更新内容"
-
+translate_failed: "翻译失败"
+invalid_request: "无效请求"
+  
 # module user
 users_retrieved: "已获取用户列表"
 user_retrieved: "已获取用户"

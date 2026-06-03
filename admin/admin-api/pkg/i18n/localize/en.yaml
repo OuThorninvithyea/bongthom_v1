@@ -18,6 +18,8 @@ user_deleted: "User deleted"
 invalid_user_id: "Invalid user ID"
 form_create_retrieved: "Create form retrieved"
 form_update_retrieved: "Update form retrieved"
+translate_failed: "transalte failed"
+invalid_request: "invalid Request"
 
 validation_min: "{{.Field}} must be at least {{.Param}} characters"
 validation_required: "{{.Field}} is required"

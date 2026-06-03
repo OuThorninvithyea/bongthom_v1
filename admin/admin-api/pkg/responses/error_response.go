@@ -1,6 +1,10 @@
 package error_responses
 
-import "fmt"
+import (
+
+	// commnuity pacakges
+	"fmt"
+)
 
 type ErrorResponse struct {
 	MessageID string

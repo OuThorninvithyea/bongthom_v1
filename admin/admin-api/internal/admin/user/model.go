@@ -3,7 +3,14 @@ package user
 import (
 
 	// Community pacakges
+	"admin-api/pkg/share"
+	"admin-api/pkg/utls"
+	"fmt"
+	"strconv"
+	"strings"
 	"time"
+
+	"github.com/gofiber/fiber/v3"
 )
 
 // User maps to tbl_users
@@ -31,6 +38,47 @@ type User struct {
 	DeletedAt    *time.Time `json:"-" db:"deleted_at"`
 }
 
+type UserShowRequest struct {
+	PageOption share.Paging   `json:"paging_options" query:"paging_options" validate:"required"`
+	Sorts      []share.Sort   `json:"sorts,omitempty" query:"sorts"`
+	Filters    []share.Filter `json:"filters.omitempty" query:"filters"`
+	Search     string         `json:"q,omitempty" query:"q"`
+	CurrencyID int            `json:"currency_id,omitempty" query:"currency_id"`
+}
+
+func (u *UserShowRequest) bind(c fiber.Ctx, v *utls.Validator) error {
+	if err := c.Bind().Query(u); err != nil {
+		return err
+	}
+
+	for i := range u.Filters {
+		// request takes &filters[index][value]= int,
+		value := c.Query(fmt.Sprintf("filters[%d][value]", i))
+		if intValue, err := strconv.Atoi(value); err == nil {
+			u.Filters[i].Value = intValue
+		} else if boolValue, err := strconv.ParseBool(value); err == nil {
+			u.Filters[i].Value = boolValue
+		} else {
+			u.Filters[i].Value = value
+		}
+	}
+	if u.Search == "" {
+		u.Search = c.Query("q")
+	}
+	if u.CurrencyID == 0 {
+		if v := strings.TrimSpace(c.Query("currency_id")); v != "" {
+			if n, err := strconv.Atoi(v); err == nil {
+				u.CurrencyID = n
+			}
+		}
+	}
+
+	if err := v.Validate(u); err != nil {
+		return err
+	}
+	return nil
+}
+
 // CreateUserRequest — fields needed to create a user
 type CreateUserRequest struct {
 	UserName  string  `json:"user_name" validate:"required,min=4"`
@@ -54,20 +102,21 @@ type UpdateUserRequest struct {
 
 // UserResponse — safe fields returned to client
 type UserResponse struct {
-	ID        int64      `json:"id"`
-	UserName  string     `json:"user_name"`
-	FirstName *string    `json:"first_name,omitempty"`
-	LastName  *string    `json:"last_name,omitempty"`
-	Email     *string    `json:"email,omitempty"`
-	RoleName  string     `json:"role_name"`
-	RoleID    int        `json:"role_id"`
-	IsAdmin   bool       `json:"is_admin"`
-	StatusID  int        `json:"status_id"`
-	LastLogin *time.Time `json:"last_login,omitempty"`
-	CreatedAt time.Time  `json:"created_at"`
+	Users []User `json:"users"`
+	Total int
 }
 
-	type PagingRequest struct {
+func (r *CreateUserRequest) bind(c fiber.Ctx, v *utls.Validator) error {
+	if err := c.Bind().Body(&r); err != nil {
+		return err
+	}
+	if err := v.Validate(r); err != nil {
+		return err
+	}
+	return nil
+}
+
+type PagingRequest struct {
 	Page    int `query:"page" validate:"min=1"`
 	PerPage int `query:"per_page" validate:"min=1,max=100"`
 }

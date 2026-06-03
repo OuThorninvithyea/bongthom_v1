@@ -11,13 +11,13 @@ import (
 )
 
 type UserService interface {
-	List(page, perPage int) ([]User, int, *error_responses.ErrorResponse)
-	GetByID(id int64) (*User, *error_responses.ErrorResponse)
-	Create(req *CreateUserRequest, createdBy int64) (*User, *error_responses.ErrorResponse)
+	Show(UserShowRequest) (*UserResponse, *error_responses.ErrorResponse)
+	ShowOne(id int64) (*UserResponse, *error_responses.ErrorResponse)
+	Create(req *CreateUserRequest, createdBy int64) *error_responses.ErrorResponse
 	Update(id int64, req *UpdateUserRequest, updatedBy int64) (*User, *error_responses.ErrorResponse)
 	Delete(id int64, deletedBy int64) *error_responses.ErrorResponse
 	GetCreateForm() any
-	GetUpdateForm(id int64) (*User, *error_responses.ErrorResponse)
+	GetUpdateForm(id int64) (*UserResponse, *error_responses.ErrorResponse)
 }
 
 type UserServiceImpl struct {
@@ -32,36 +32,32 @@ func NewUserServiceImpl(db *sqlx.DB, rdb *redis.Client) *UserServiceImpl {
 	}
 }
 
-func (s *UserServiceImpl) List(page, perPage int) ([]User, int, *error_responses.ErrorResponse) {
-	if page < 1 {
-		page = 1
-	}
-	if perPage < 1 || perPage > 100 {
-		perPage = 20
-	}
-	return s.Repo.GetAll(page, perPage)
+func (s *UserServiceImpl) Show(userRequest UserShowRequest) (*UserResponse, *error_responses.ErrorResponse) {
+
+	return s.Repo.Show(userRequest)
 }
 
-func (s *UserServiceImpl) GetByID(id int64) (*User, *error_responses.ErrorResponse) {
-	return s.Repo.GetByID(id)
+func (s *UserServiceImpl) ShowOne(id int64) (*UserResponse, *error_responses.ErrorResponse) {
+	return s.Repo.ShowOne(id)
 }
 
-func (s *UserServiceImpl) Create(req *CreateUserRequest, createdBy int64) (*User, *error_responses.ErrorResponse) {
+func (s *UserServiceImpl) Create(req *CreateUserRequest, createdBy int64) *error_responses.ErrorResponse {
 	msg := error_responses.ErrorResponse{}
 
 	// Check duplicate username
 	existing, _ := s.Repo.GetByUserName(req.UserName)
 	if existing != nil {
-		return nil, msg.NewErrorResponse("user_name_taken", fmt.Errorf("username exists"))
+		return msg.NewErrorResponse("user_name_taken", fmt.Errorf("username exists"))
 	}
 
 	// Hash password
 	hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return nil, msg.NewErrorResponse("password_hash_failed", err)
+		return msg.NewErrorResponse("password_hash_failed", err)
 	}
 
 	user := &User{
+
 		UserName:  req.UserName,
 		Password:  string(hashed),
 		FirstName: req.FirstName,
@@ -73,10 +69,9 @@ func (s *UserServiceImpl) Create(req *CreateUserRequest, createdBy int64) (*User
 	}
 
 	if err := s.Repo.Create(user); err != nil {
-		return nil, err
+		return err
 	}
-
-	return user, nil
+	return nil
 }
 
 func (s *UserServiceImpl) Update(id int64, req *UpdateUserRequest, updatedBy int64) (*User, *error_responses.ErrorResponse) {
@@ -112,7 +107,7 @@ func (s *UserServiceImpl) Update(id int64, req *UpdateUserRequest, updatedBy int
 }
 
 func (s *UserServiceImpl) Delete(id int64, deletedBy int64) *error_responses.ErrorResponse {
-	return s.Repo.SoftDelete(id, deletedBy)
+	return s.Repo.Delete(id, deletedBy)
 }
 
 func (s *UserServiceImpl) GetCreateForm() any {
@@ -129,6 +124,6 @@ func (s *UserServiceImpl) GetCreateForm() any {
 	}
 }
 
-func (s *UserServiceImpl) GetUpdateForm(id int64) (*User, *error_responses.ErrorResponse) {
-	return s.Repo.GetByID(id)
+func (s *UserServiceImpl) GetUpdateForm(id int64) (*UserResponse, *error_responses.ErrorResponse) {
+	return s.Repo.ShowOne(id)
 }

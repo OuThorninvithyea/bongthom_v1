@@ -10,15 +10,16 @@ import (
 
 	// Interntal pacakges
 	error_responses "admin-api/pkg/responses"
+	custom_sql "admin-api/pkg/sql"
 )
 
 type UserRepo interface {
-	GetAll(page, perPage int) ([]User, int, *error_responses.ErrorResponse)
-	GetByID(id int64) (*User, *error_responses.ErrorResponse)
+	Show(u UserShowRequest) (*UserResponse, *error_responses.ErrorResponse)
+	ShowOne(id int64) (*UserResponse, *error_responses.ErrorResponse)
 	GetByUserName(userName string) (*User, *error_responses.ErrorResponse)
 	Create(user *User) *error_responses.ErrorResponse
 	Update(id int64, updates map[string]any) (*User, *error_responses.ErrorResponse)
-	SoftDelete(id int64, deletedBy int64) *error_responses.ErrorResponse
+	Delete(id int64, deletedBy int64) *error_responses.ErrorResponse
 }
 
 type UserRepoImpl struct {
@@ -29,31 +30,55 @@ func NewUserRepoImpl(db *sqlx.DB) UserRepo {
 	return &UserRepoImpl{db: db}
 }
 
-func (r *UserRepoImpl) GetAll(page, perPage int) ([]User, int, *error_responses.ErrorResponse) {
-	msg := error_responses.ErrorResponse{}
+func (r *UserRepoImpl) Show(userRequest UserShowRequest) (*UserResponse, *error_responses.ErrorResponse) {
+	var per_page = userRequest.PageOption.Perpage
+	var page = userRequest.PageOption.Page
+	var offset = (page - 1) * per_page
+	fmt.Printf("offset:%d", offset)
+	var limit_clause = fmt.Sprintf(" LIMIT %d OFFSET %d", per_page, offset)
+	var sql_orderby = custom_sql.BuildSQLSort(userRequest.Sorts)
 
-	var total int
-	r.db.Get(&total, `SELECT COUNT(*) FROM tbl_users WHERE deleted_at IS NULL`)
-
-	offset := (page - 1) * perPage
-	var users []User
-	err := r.db.Select(&users,
-		`SELECT id, user_name, first_name, last_name, email, role_name, role_id, is_admin,
-		 login_session, last_login, currency_id, language_id, status_id, created_at, updated_at
-		 FROM tbl_users
-		 WHERE deleted_at IS NULL
-		 ORDER BY id ASC
-		 LIMIT $1 OFFSET $2`,
-		perPage, offset,
-	)
-	if err != nil {
-		return nil, 0, msg.NewErrorResponse("database_error", err)
+	sql_filters, args_filters := custom_sql.BuildSQLFilter(userRequest.Filters)
+	if len(args_filters) > 0 {
+		sql_filters = " AND " + sql_filters
 	}
 
-	return users, total, nil
+	if searchClause, searchArgs := custom_sql.BuildSQLSearch(
+		[]string{"u.user_name", "u.first_name", "u.last_name", "u.user_alias", "u.email"},
+		userRequest.Search, len(args_filters)+1,
+	); searchClause != "" {
+		sql_filters += " AND " + searchClause
+		args_filters = append(args_filters, searchArgs...)
+	}
+
+	msg := error_responses.ErrorResponse{}
+
+	// Total count with same filters (no limit/offset/order)
+	var total int
+	countQuery := fmt.Sprintf(
+		`SELECT COUNT(*) FROM tbl_users u WHERE deleted_at IS NULL %s`,
+		sql_filters)
+	err := r.db.Get(&total, countQuery, args_filters...)
+	if err != nil {
+		return nil, msg.NewErrorResponse("database_error", err)
+	}
+
+	var users []User
+	query := fmt.Sprintf(
+		`SELECT id, user_name, first_name, last_name, email, role_name, role_id, is_admin,
+		 login_session, last_login, currency_id, language_id, status_id, created_at, updated_at
+		 FROM tbl_users u
+		WHERE deleted_at IS NULL
+		%s %s %s`, sql_filters, sql_orderby, limit_clause)
+
+	err = r.db.Select(&users, query, args_filters...)
+	if err != nil {
+		return nil, msg.NewErrorResponse("database_error", err)
+	}
+	return &UserResponse{Users: users, Total: total}, nil
 }
 
-func (r *UserRepoImpl) GetByID(id int64) (*User, *error_responses.ErrorResponse) {
+func (r *UserRepoImpl) ShowOne(id int64) (*UserResponse, *error_responses.ErrorResponse) {
 	msg := error_responses.ErrorResponse{}
 
 	var user User
@@ -63,7 +88,9 @@ func (r *UserRepoImpl) GetByID(id int64) (*User, *error_responses.ErrorResponse)
 	if err != nil {
 		return nil, msg.NewErrorResponse("user_not_found", err)
 	}
-	return &user, nil
+	return &UserResponse{
+		Users: []User{user,}, Total: 1,
+	}, nil
 }
 
 func (r *UserRepoImpl) GetByUserName(userName string) (*User, *error_responses.ErrorResponse) {
@@ -123,7 +150,7 @@ func (r *UserRepoImpl) Update(id int64, updates map[string]any) (*User, *error_r
 	return &user, nil
 }
 
-func (r *UserRepoImpl) SoftDelete(id int64, deletedBy int64) *error_responses.ErrorResponse {
+func (r *UserRepoImpl) Delete(id int64, deletedBy int64) *error_responses.ErrorResponse {
 	msg := error_responses.ErrorResponse{}
 
 	result, err := r.db.Exec(
