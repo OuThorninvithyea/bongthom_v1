@@ -31,7 +31,7 @@ func NewUserRepoImpl(db *sqlx.DB) UserRepo {
 }
 
 func (r *UserRepoImpl) Show(userRequest UserShowRequest) (*UserResponse, *error_responses.ErrorResponse) {
-	// Calculatings for skipping users in table database, OFFEST = skip 
+	// Calculatings for skipping users in table database, OFFEST = skip
 	var per_page = userRequest.PageOption.Perpage
 	var page = userRequest.PageOption.Page
 	var offset = (page - 1) * per_page
@@ -54,7 +54,6 @@ func (r *UserRepoImpl) Show(userRequest UserShowRequest) (*UserResponse, *error_
 
 	msg := error_responses.ErrorResponse{}
 
-
 	// Total count with same filters (no limit/offset/order)
 	var total int
 	countQuery := fmt.Sprintf(
@@ -68,8 +67,8 @@ func (r *UserRepoImpl) Show(userRequest UserShowRequest) (*UserResponse, *error_
 	var users []User
 	query := fmt.Sprintf(
 		`SELECT id, user_name, first_name, last_name, email, role_name, role_id, is_admin,
-		 login_session, last_login, currency_id, language_id, status_id, created_at, updated_at
-		 FROM tbl_users u
+		login_session, last_login, currency_id, language_id, status_id, created_at, updated_at
+		FROM tbl_users u
 		WHERE deleted_at IS NULL
 		%s %s %s`, sql_filters, sql_orderby, limit_clause)
 
@@ -91,7 +90,7 @@ func (r *UserRepoImpl) ShowOne(id int64) (*UserResponse, *error_responses.ErrorR
 		return nil, msg.NewErrorResponse("user_not_found", err)
 	}
 	return &UserResponse{
-		Users: []User{user,}, Total: 1,
+		Users: []User{user}, Total: 1,
 	}, nil
 }
 
