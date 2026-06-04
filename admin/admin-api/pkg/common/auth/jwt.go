@@ -1,6 +1,8 @@
 package auth
 
 import (
+
+	// Community packages
 	"fmt"
 	"time"
 	"github.com/golang-jwt/jwt/v5"

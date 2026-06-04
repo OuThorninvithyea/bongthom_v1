@@ -31,6 +31,7 @@ func NewUserRepoImpl(db *sqlx.DB) UserRepo {
 }
 
 func (r *UserRepoImpl) Show(userRequest UserShowRequest) (*UserResponse, *error_responses.ErrorResponse) {
+	// Calculatings for skipping users in table database, OFFEST = skip 
 	var per_page = userRequest.PageOption.Perpage
 	var page = userRequest.PageOption.Page
 	var offset = (page - 1) * per_page
