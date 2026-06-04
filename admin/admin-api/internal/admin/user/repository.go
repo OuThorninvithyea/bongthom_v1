@@ -53,6 +53,7 @@ func (r *UserRepoImpl) Show(userRequest UserShowRequest) (*UserResponse, *error_
 
 	msg := error_responses.ErrorResponse{}
 
+
 	// Total count with same filters (no limit/offset/order)
 	var total int
 	countQuery := fmt.Sprintf(
