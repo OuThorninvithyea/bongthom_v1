@@ -66,6 +66,7 @@ func NewJwtMiddleware(app *fiber.App, db *sqlx.DB, redis *redis.Client) {
 
 		// HTTP auth
 		authHeader := c.Get("Authorization")
+
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
 			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
 				"success":     false,

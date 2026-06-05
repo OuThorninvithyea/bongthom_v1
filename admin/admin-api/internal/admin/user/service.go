@@ -8,12 +8,14 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	error_responses "admin-api/pkg/responses"
+	"admin-api/pkg/share"
 )
 
 type UserService interface {
+	SetUserCtx(ctx share.UserContext)
 	Show(UserShowRequest) (*UserResponse, *error_responses.ErrorResponse)
 	ShowOne(id int64) (*UserResponse, *error_responses.ErrorResponse)
-	Create(req *CreateUserRequest, createdBy int64) *error_responses.ErrorResponse
+	Create(req *UserCreateRequest) *error_responses.ErrorResponse
 	Update(id int64, req *UpdateUserRequest, updatedBy int64) (*User, *error_responses.ErrorResponse)
 	Delete(id int64, deletedBy int64) *error_responses.ErrorResponse
 	GetCreateForm() any
@@ -21,15 +23,22 @@ type UserService interface {
 }
 
 type UserServiceImpl struct {
-	Repo  UserRepo
-	Redis *redis.Client
+	Repo    UserRepo
+	Redis   *redis.Client
+	DB      *sqlx.DB
+	UserCtx share.UserContext
 }
 
 func NewUserServiceImpl(db *sqlx.DB, rdb *redis.Client) *UserServiceImpl {
 	return &UserServiceImpl{
-		Repo:  NewUserRepoImpl(db),
+		Repo:  NewUserRepoImpl(db, rdb),
 		Redis: rdb,
+		DB:    db,
 	}
+}
+
+func (s *UserServiceImpl) SetUserCtx(ctx share.UserContext) {
+	s.UserCtx = ctx
 }
 
 func (s *UserServiceImpl) Show(userRequest UserShowRequest) (*UserResponse, *error_responses.ErrorResponse) {
@@ -40,33 +49,21 @@ func (s *UserServiceImpl) ShowOne(id int64) (*UserResponse, *error_responses.Err
 	return s.Repo.ShowOne(id)
 }
 
-func (s *UserServiceImpl) Create(req *CreateUserRequest, createdBy int64) *error_responses.ErrorResponse {
+func (s *UserServiceImpl) Create(req *UserCreateRequest) *error_responses.ErrorResponse {
 	msg := error_responses.ErrorResponse{}
 
-	// Check duplicate username
-	existing, _ := s.Repo.GetByUserName(req.UserName)
-	if existing != nil {
-		return msg.NewErrorResponse("user_name_taken", fmt.Errorf("username exists"))
+	var user User
+	if err := user.New(req, &s.UserCtx, s.DB); err != nil {
+		return msg.NewErrorResponse("user_create_failed", err)
 	}
 
-	// Hash password
-	hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return msg.NewErrorResponse("password_hash_failed", err)
 	}
+	user.Password = string(hashedPassword)
 
-	user := &User{
-		UserName:  req.UserName,
-		Password:  string(hashed),
-		FirstName: req.FirstName,
-		LastName:  req.LastName,
-		Email:     req.Email,
-		RoleID:    req.RoleID,
-		RoleName:  req.RoleName,
-		CreatedBy: &createdBy,
-	}
-
-	if err := s.Repo.Create(user); err != nil {
+	if err := s.Repo.Create(&user); err != nil {
 		return err
 	}
 	return nil

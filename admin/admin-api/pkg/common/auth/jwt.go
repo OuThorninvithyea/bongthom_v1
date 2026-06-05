@@ -1,33 +1,36 @@
 package auth
 
 import (
+	// Community packages
 	"fmt"
 	"time"
+
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// Claims holds the JWT payload — fields must match tbl_users + auth tables
+// Claims holds the JWT payload and the database-backed login session.
 type Claims struct {
-	UserID       int64  `json:"user_id"`
-	UserName     string `json:"user_name"`
-	LoginSession string `json:"login_session"`
-	RoleID       int    `json:"role_id"`
-	jwt.RegisteredClaims
+	UserID               int64  `json:"user_id"`
+	UserName             string `json:"user_name"`
+	RoleID               int    `json:"role_id"`
+	LoginSession         string `json:"login_session"`
+	jwt.RegisteredClaims        // exp, iat
 }
 
 // GenerateToken creates a signed HS256 JWT valid for the given duration
-func GenerateToken(userID int64, userName string, loginSession string, roleID int, secret string, d time.Duration) (string, time.Time, error) {
+// and includes the session value stored on the user row.
+func GenerateToken(userID int64, userName string, roleID int, loginSession string, secret string, d time.Duration) (string, time.Time, error) {
 	now := time.Now()
 	expiresAt := now.Add(d)
 
 	claims := Claims{
 		UserID:       userID,
 		UserName:     userName,
-		LoginSession: loginSession,
 		RoleID:       roleID,
+		LoginSession: loginSession,
 		RegisteredClaims: jwt.RegisteredClaims{
-		ExpiresAt: jwt.NewNumericDate(expiresAt),
-		IssuedAt:  jwt.NewNumericDate(now),
+			ExpiresAt: jwt.NewNumericDate(expiresAt),
+			IssuedAt:  jwt.NewNumericDate(now),
 		},
 	}
 

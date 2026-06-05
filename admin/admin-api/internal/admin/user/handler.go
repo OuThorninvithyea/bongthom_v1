@@ -14,6 +14,7 @@ import (
 	// Internal pacakges
 	constants "admin-api/pkg/constants"
 	response "admin-api/pkg/http"
+	"admin-api/pkg/share"
 	"admin-api/pkg/translate"
 	"admin-api/pkg/utls"
 )
@@ -112,9 +113,9 @@ func (h *UserHandler) ShowOne(c fiber.Ctx) error {
 	)
 }
 
-// CreateUser — POST /users/create
+// CreateUser — POST /users/create // c also contain userCtx when jwt_claimed from jwt middwalre
 func (h *UserHandler) Create(c fiber.Ctx) error {
-	req := &CreateUserRequest{}
+	req := &UserCreateRequest{}
 	v := utls.NewValidator()
 
 	if err := req.bind(c, v); err != nil {
@@ -139,9 +140,16 @@ func (h *UserHandler) Create(c fiber.Ctx) error {
 		return err
 	}
 
-	var createdBy int64 = 1 // TODO: from JWT
+	uCtx, ok := c.Locals("UserContext").(share.UserContext)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(
+			response.NewResponseError("Missing user context", constants.Generic_invalid, errors.New("no UserContext")),
+		)
+	}
 
-	e := h.Service.Create(req, createdBy)
+	h.Service.SetUserCtx(uCtx)
+
+	e := h.Service.Create(req)
 	if e != nil {
 		msg, e_msg := translate.TranslateWithError(c, e.MessageID)
 		if e_msg != nil {
@@ -182,7 +190,12 @@ func (h *UserHandler) Update(c fiber.Ctx) error {
 		)
 	}
 
-	var updatedBy int64 = 1 // TODO: from JWT
+	var updatedBy int64 // from JWT
+	if uCtx, ok := c.Locals("UserContext").(share.UserContext); ok {
+		updatedBy = uCtx.UserID
+	} else {
+		updatedBy = 1 // fallback
+	}
 
 	user, e := h.Service.Update(id, req, updatedBy)
 	if e != nil {
@@ -218,7 +231,12 @@ func (h *UserHandler) Delete(c fiber.Ctx) error {
 		)
 	}
 
-	var deletedBy int64 = 1 // TODO: from JWT
+	var deletedBy int64 // from JWT
+	if uCtx, ok := c.Locals("UserContext").(share.UserContext); ok {
+		deletedBy = uCtx.UserID
+	} else {
+		deletedBy = 1 // fallback
+	}
 
 	if e := h.Service.Delete(id, deletedBy); e != nil {
 		msg, e_msg := translate.TranslateWithError(c, e.MessageID)

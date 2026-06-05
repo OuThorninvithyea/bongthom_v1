@@ -32,7 +32,7 @@ type AdminService struct {
 
 func NewAdminService(a *fiber.App, db *sqlx.DB, rdb *redis.Client, wsmgr *websocket.WebSocketManager) *AdminService {
 	authRoute := auth.NewAuthRoute(a, db, rdb) //
-	middlewares.NewJwtMiddleware(a, db, rdb)   // checking HTTP incoming request, { Header, body } as plant TEXT
+	middlewares.NewJwtMiddleware(a, db, rdb)   // checking HTTP incoming request, { Header, body } as plain TEXT
 	userRoute := user.NewUserRoute(a, db, rdb) //
 	return &AdminService{
 		Auth: authRoute,

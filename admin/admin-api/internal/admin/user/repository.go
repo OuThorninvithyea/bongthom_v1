@@ -3,12 +3,15 @@ package user
 import (
 
 	// Community pacakges
+	"context"
 	"fmt"
 	"strings"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/redis/go-redis/v9"
 
 	// Interntal pacakges
+	"admin-api/pkg/redis_util"
 	error_responses "admin-api/pkg/responses"
 	custom_sql "admin-api/pkg/sql"
 )
@@ -23,11 +26,12 @@ type UserRepo interface {
 }
 
 type UserRepoImpl struct {
-	db *sqlx.DB
+	db    *sqlx.DB
+	redis *redis.Client
 }
 
-func NewUserRepoImpl(db *sqlx.DB) UserRepo {
-	return &UserRepoImpl{db: db}
+func NewUserRepoImpl(db *sqlx.DB, rdb *redis.Client) UserRepo {
+	return &UserRepoImpl{db: db, redis: rdb}
 }
 
 func (r *UserRepoImpl) Show(userRequest UserShowRequest) (*UserResponse, *error_responses.ErrorResponse) {
@@ -40,6 +44,7 @@ func (r *UserRepoImpl) Show(userRequest UserShowRequest) (*UserResponse, *error_
 	var sql_orderby = custom_sql.BuildSQLSort(userRequest.Sorts)
 
 	sql_filters, args_filters := custom_sql.BuildSQLFilter(userRequest.Filters)
+	fmt.Println(userRequest)
 	if len(args_filters) > 0 {
 		sql_filters = " AND " + sql_filters
 	}
@@ -57,7 +62,12 @@ func (r *UserRepoImpl) Show(userRequest UserShowRequest) (*UserResponse, *error_
 	// Total count with same filters (no limit/offset/order)
 	var total int
 	countQuery := fmt.Sprintf(
-		`SELECT COUNT(*) FROM tbl_users u WHERE deleted_at IS NULL %s`,
+		`SELECT COUNT(*) FROM (
+		SELECT user_name, first_name, last_name, email, role_name, role_id, is_admin,
+		login_session, last_login, currency_id, language_id, status_id, created_at, updated_at
+		FROM tbl_users u
+		WHERE deleted_at IS NULL %s
+	) AS t`,
 		sql_filters)
 	err := r.db.Get(&total, countQuery, args_filters...)
 	if err != nil {
@@ -70,6 +80,7 @@ func (r *UserRepoImpl) Show(userRequest UserShowRequest) (*UserResponse, *error_
 		 FROM tbl_users u
 		WHERE deleted_at IS NULL
 		%s %s %s`, sql_filters, sql_orderby, limit_clause)
+	// fmt.Printf(query)
 
 	err = r.db.Select(&users, query, args_filters...)
 	if err != nil {
@@ -107,16 +118,33 @@ func (r *UserRepoImpl) GetByUserName(userName string) (*User, *error_responses.E
 func (r *UserRepoImpl) Create(user *User) *error_responses.ErrorResponse {
 	msg := error_responses.ErrorResponse{}
 
-	err := r.db.QueryRow(
-		`INSERT INTO tbl_users (first_name, last_name, user_name, email, password, role_name, role_id, is_admin, created_by)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-		 RETURNING id, created_at`,
-		user.FirstName, user.LastName, user.UserName, user.Email,
-		user.Password, user.RoleName, user.RoleID, user.IsAdmin, user.CreatedBy,
-	).Scan(&user.ID, &user.CreatedAt)
+	// Insert into PostgreSQL and capture the generated ID
+	query := `
+		INSERT INTO tbl_users (
+			first_name, last_name, user_name, email, password,
+			role_name, role_id, login_session, status_id, "order",
+			created_by, created_at
+		) VALUES (
+			:first_name, :last_name, :user_name, :email, :password,
+			:role_name, :role_id, :login_session, :status_id, :order,
+			:created_by, :created_at
+		) RETURNING id`
+	rows, err := r.db.NamedQuery(query, user)
 	if err != nil {
 		return msg.NewErrorResponse("database_error", err)
 	}
+	defer rows.Close()
+	if rows.Next() {
+		if err := rows.Scan(&user.ID); err != nil {
+			return msg.NewErrorResponse("database_error", err)
+		}
+	}
+
+	// Set redis data
+	key := fmt.Sprintf("user_info_id:%d", user.ID)
+	rdb := redis_util.NewRedisUtil(r.redis)
+	rdb.SetCacheKey(key, user, context.Background())
+
 	return nil
 }
 

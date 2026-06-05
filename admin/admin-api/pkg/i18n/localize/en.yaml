@@ -27,3 +27,6 @@ validation_required: "{{.Field}} is required"
 # module auth
 login_invalid: "Invalid request"
 login_success: "Login Success"
+
+# module seed
+users_seeded: "Mock users seeded successfully"

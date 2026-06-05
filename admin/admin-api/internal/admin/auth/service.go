@@ -55,7 +55,7 @@ func (s *AuthServiceImpl) Login(username string, password string) (*AuthLoginRep
 
 	// Step 5: generate access token (business logic — lives in service)
 	accessToken, _, jerr := jwtauth.GenerateToken(
-		user.ID, user.UserName, loginSession, user.RoleID,
+		user.ID, user.UserName, user.RoleID, loginSession,
 		secret, 15*time.Minute,
 	)
 	if jerr != nil {
