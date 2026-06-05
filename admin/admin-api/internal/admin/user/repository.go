@@ -78,8 +78,8 @@ func (r *UserRepoImpl) Show(userRequest UserShowRequest) (*UserResponse, *error_
 		`SELECT id, user_name, first_name, last_name, email, role_name, role_id, is_admin,
 		 login_session, last_login, currency_id, language_id, status_id, created_at, updated_at
 		 FROM tbl_users u
-		WHERE deleted_at IS NULL
-		%s %s %s`, sql_filters, sql_orderby, limit_clause)
+		 WHERE deleted_at IS NULL
+		 %s %s %s`, sql_filters, sql_orderby, limit_clause)
 	// fmt.Printf(query)
 
 	err = r.db.Select(&users, query, args_filters...)
@@ -129,6 +129,7 @@ func (r *UserRepoImpl) Create(user *User) *error_responses.ErrorResponse {
 			:role_name, :role_id, :login_session, :status_id, :order,
 			:created_by, :created_at
 		) RETURNING id`
+		
 	rows, err := r.db.NamedQuery(query, user)
 	if err != nil {
 		return msg.NewErrorResponse("database_error", err)

@@ -70,6 +70,33 @@ func (s *UserServiceImpl) Create(req *UserCreateRequest) *error_responses.ErrorR
 }
 
 func (s *UserServiceImpl) Update(id int64, req *UpdateUserRequest, updatedBy int64) (*User, *error_responses.ErrorResponse) {
+	msg := error_responses.ErrorResponse{}
+
+	// Authorization: fetch target user
+	target, e := s.Repo.ShowOne(id)
+	if e != nil {
+		return nil, e
+	}
+	if len(target.Users) == 0 {
+		return nil, msg.NewErrorResponse("user_not_found", fmt.Errorf("user %d not found", id))
+	}
+	targetUser := target.Users[0]
+
+	// Check: caller must have equal or higher role than target
+	if s.UserCtx.RoleID > targetUser.RoleID {
+		return nil, msg.NewErrorResponse("access_denied", fmt.Errorf("cannot modify higher-privilege user"))
+	}
+
+	// Check: can't promote someone above your own level
+	if req.RoleID != nil && s.UserCtx.RoleID > *req.RoleID {
+		return nil, msg.NewErrorResponse("access_denied", fmt.Errorf("cannot assign higher role than your own"))
+	}
+
+	// Check: can't modify yourself to deactivate
+	if id == s.UserCtx.UserID && req.StatusID != nil && *req.StatusID != 1 {
+		return nil, msg.NewErrorResponse("access_denied", fmt.Errorf("cannot deactivate yourself"))
+	}
+
 	updates := map[string]any{}
 
 	if req.FirstName != nil {
@@ -92,7 +119,6 @@ func (s *UserServiceImpl) Update(id int64, req *UpdateUserRequest, updatedBy int
 	}
 
 	if len(updates) == 0 {
-		msg := error_responses.ErrorResponse{}
 		return nil, msg.NewErrorResponse("no_updates_provided", fmt.Errorf("empty"))
 	}
 
@@ -102,6 +128,28 @@ func (s *UserServiceImpl) Update(id int64, req *UpdateUserRequest, updatedBy int
 }
 
 func (s *UserServiceImpl) Delete(id int64, deletedBy int64) *error_responses.ErrorResponse {
+	msg := error_responses.ErrorResponse{}
+
+	// Can't delete yourself
+	if id == s.UserCtx.UserID {
+		return msg.NewErrorResponse("access_denied", fmt.Errorf("cannot delete yourself"))
+	}
+
+	// Authorization: fetch target user
+	target, e := s.Repo.ShowOne(id)
+	if e != nil {
+		return e
+	}
+	if len(target.Users) == 0 {
+		return msg.NewErrorResponse("user_not_found", fmt.Errorf("user %d not found", id))
+	}
+	targetUser := target.Users[0]
+
+	// Check: caller must have equal or higher role than target
+	if s.UserCtx.RoleID > targetUser.RoleID {
+		return msg.NewErrorResponse("access_denied", fmt.Errorf("cannot delete higher-privilege user"))
+	}
+
 	return s.Repo.Delete(id, deletedBy)
 }
 

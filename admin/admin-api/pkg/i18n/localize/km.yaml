@@ -1,4 +1,5 @@
 loginSessionMissing: "គ្មាន login_session"
+loginSessionInvalid: "សម័យមិនត្រឹមត្រូវ"
 login_failed: "ចូលប្រព័ន្ធកម្មវិធី បរាជ័យ"
 user_not_found: "មិនមានអ្នកប្រើប្រាស់"
 invalid_credentials: "ព័ត៌មានចូលមិនត្រឹមត្រូវ"
@@ -15,6 +16,7 @@ user_retrieved: "បានទាញយកអ្នកប្រើប្រាស
 user_created: "បានបង្កើតអ្នកប្រើប្រាស់"
 user_updated: "បានធ្វើបច្ចុប្បន្នភាពអ្នកប្រើប្រាស់"
 user_deleted: "បានលុបអ្នកប្រើប្រាស់"
+access_denied: "មិនអាចចូលប្រើបាន"
 invalid_user_id: "លេខសម្គាល់អ្នកប្រើប្រាស់មិនត្រឹមត្រូវ"
 form_create_retrieved: "បានទាញយកទម្រង់បង្កើត"
 form_update_retrieved: "បានទាញយកទម្រង់ធ្វើបច្ចុប្បន្នភាព"

@@ -193,6 +193,7 @@ func (h *UserHandler) Update(c fiber.Ctx) error {
 	var updatedBy int64 // from JWT
 	if uCtx, ok := c.Locals("UserContext").(share.UserContext); ok {
 		updatedBy = uCtx.UserID
+		h.Service.SetUserCtx(uCtx)
 	} else {
 		updatedBy = 1 // fallback
 	}
@@ -234,6 +235,7 @@ func (h *UserHandler) Delete(c fiber.Ctx) error {
 	var deletedBy int64 // from JWT
 	if uCtx, ok := c.Locals("UserContext").(share.UserContext); ok {
 		deletedBy = uCtx.UserID
+		h.Service.SetUserCtx(uCtx)
 	} else {
 		deletedBy = 1 // fallback
 	}

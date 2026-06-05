@@ -24,7 +24,11 @@ type AuthServiceImpl struct {
 
 type AuthService interface {
 	Login(username string, password string) (*AuthLoginReponse, *error_responses.ErrorResponse)
-	CheckRedisSession(loginSession string, userID int64) (*Auth, *error_responses.ErrorResponse)
+	CheckSession(loginSession string, userID int64) (bool, *error_responses.ErrorResponse)
+}
+
+func NewAuthService(db *sqlx.DB, rdb *redis.Client) AuthService {
+	return NewAuthServiceImpl(db, rdb)
 }
 
 func NewAuthServiceImpl(db *sqlx.DB, rdb *redis.Client) *AuthServiceImpl {
@@ -79,21 +83,21 @@ func (s *AuthServiceImpl) Login(username string, password string) (*AuthLoginRep
 	return &au, nil
 }
 
-func (s *AuthServiceImpl) CheckRedisSession(loginSession string, userID int64) (*Auth, *error_responses.ErrorResponse) {
+func (s *AuthServiceImpl) CheckSession(loginSession string, userID int64) (bool, *error_responses.ErrorResponse) {
 	msg := error_responses.ErrorResponse{}
 
 	// Fast path: Redis
 	key := fmt.Sprintf("session:%d", userID)
 	stored, redisErr := s.Redis.Get(context.Background(), key).Result()
 	if redisErr == nil && stored == loginSession {
-		return &Auth{ID: userID}, nil
+		return true, nil
 	}
 
 	// Slow path: PostgreSQL fallback (Redis down or key missing)
-	user, dbErr := s.Repo.CheckDatabaseLoginSession(userID, loginSession)
+	_, dbErr := s.Repo.CheckDatabaseLoginSession(userID, loginSession)
 	if dbErr == nil {
-		return user, nil
+		return true, nil
 	}
 
-	return nil, msg.NewErrorResponse("invalid_session", fmt.Errorf("session mismatch"))
+	return false, msg.NewErrorResponse("invalid_session", fmt.Errorf("session mismatch"))
 }
