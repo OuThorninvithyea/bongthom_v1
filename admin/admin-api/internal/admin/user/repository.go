@@ -31,6 +31,7 @@ func NewUserRepoImpl(db *sqlx.DB) UserRepo {
 }
 
 func (r *UserRepoImpl) Show(userRequest UserShowRequest) (*UserResponse, *error_responses.ErrorResponse) {
+	// Calculatings for skipping user in
 	var per_page = userRequest.PageOption.Perpage
 	var page = userRequest.PageOption.Page
 	var offset = (page - 1) * per_page
@@ -62,7 +63,6 @@ func (r *UserRepoImpl) Show(userRequest UserShowRequest) (*UserResponse, *error_
 	if err != nil {
 		return nil, msg.NewErrorResponse("database_error", err)
 	}
-
 	var users []User
 	query := fmt.Sprintf(
 		`SELECT id, user_name, first_name, last_name, email, role_name, role_id, is_admin,
@@ -89,7 +89,7 @@ func (r *UserRepoImpl) ShowOne(id int64) (*UserResponse, *error_responses.ErrorR
 		return nil, msg.NewErrorResponse("user_not_found", err)
 	}
 	return &UserResponse{
-		Users: []User{user,}, Total: 1,
+		Users: []User{user}, Total: 1,
 	}, nil
 }
 

@@ -97,4 +97,3 @@ func (s *AuthServiceImpl) CheckRedisSession(loginSession string, userID int64) (
 
 	return nil, msg.NewErrorResponse("invalid_session", fmt.Errorf("session mismatch"))
 }
-	

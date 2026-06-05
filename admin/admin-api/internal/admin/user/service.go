@@ -33,7 +33,6 @@ func NewUserServiceImpl(db *sqlx.DB, rdb *redis.Client) *UserServiceImpl {
 }
 
 func (s *UserServiceImpl) Show(userRequest UserShowRequest) (*UserResponse, *error_responses.ErrorResponse) {
-
 	return s.Repo.Show(userRequest)
 }
 
@@ -57,7 +56,6 @@ func (s *UserServiceImpl) Create(req *CreateUserRequest, createdBy int64) *error
 	}
 
 	user := &User{
-
 		UserName:  req.UserName,
 		Password:  string(hashed),
 		FirstName: req.FirstName,
