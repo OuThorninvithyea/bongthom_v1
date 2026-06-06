@@ -14,6 +14,7 @@ import (
 
 	// internal pacakges
 	jwtauth "admin-api/pkg/common/auth"
+	"admin-api/pkg/logs"
 	error_responses "admin-api/pkg/responses"
 )
 
@@ -66,11 +67,13 @@ func (s *AuthServiceImpl) Login(username string, password string) (*AuthLoginRep
 		return nil, msg.NewErrorResponse("token_generation_failed", jerr)
 	}
 
-	// Step 5: store login session in Redis
-	s.Redis.Set(context.Background(),
+	// Step 5: store login session in Redis (15min TTL — matches JWT expiry)
+	if err := s.Redis.Set(context.Background(),
 		fmt.Sprintf("session:%d", user.ID), loginSession,
-		0, // no expiry — lives until manual delete
-	)
+		15*time.Minute,
+	).Err(); err != nil {
+		logs.NewCustomLog("redis_session_set_failed", err.Error(), "warn")
+	}
 
 	// Step 6: store login session in database (audit trail)
 	if err := s.Repo.UpdateLoginSession(user.ID, loginSession); err != nil {

@@ -39,12 +39,10 @@ func (r *UserRepoImpl) Show(userRequest UserShowRequest) (*UserResponse, *error_
 	var per_page = userRequest.PageOption.Perpage
 	var page = userRequest.PageOption.Page
 	var offset = (page - 1) * per_page
-	fmt.Printf("offset:%d", offset)
 	var limit_clause = fmt.Sprintf(" LIMIT %d OFFSET %d", per_page, offset)
 	var sql_orderby = custom_sql.BuildSQLSort(userRequest.Sorts)
 
 	sql_filters, args_filters := custom_sql.BuildSQLFilter(userRequest.Filters)
-	fmt.Println(userRequest)
 	if len(args_filters) > 0 {
 		sql_filters = " AND " + sql_filters
 	}
@@ -79,8 +77,7 @@ func (r *UserRepoImpl) Show(userRequest UserShowRequest) (*UserResponse, *error_
 		 login_session, last_login, currency_id, language_id, status_id, created_at, updated_at
 		 FROM tbl_users u
 		 WHERE deleted_at IS NULL
-		 %s %s %s`, sql_filters, sql_orderby, limit_clause)
-	// fmt.Printf(query)
+		%s %s %s`, sql_filters, sql_orderby, limit_clause)
 
 	err = r.db.Select(&users, query, args_filters...)
 	if err != nil {

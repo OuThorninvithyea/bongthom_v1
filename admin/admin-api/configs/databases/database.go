@@ -86,7 +86,7 @@ func listenForUserNotifications(dsn string) {
 		log.Fatal("Failed to LISTEN on channel:", err)
 	}
 
-	fmt.Println("Listening for notifications...")
+	log.Println("Listening for user notifications...")
 
 	// Infinite loop to receive notifications
 	for {
@@ -98,7 +98,7 @@ func listenForUserNotifications(dsn string) {
 				if err := json.Unmarshal([]byte(notification.Extra), &BroadcastValue); err != nil {
 					log.Println("Failed to unmarshal notification:", err)
 				}
-				fmt.Println("Broadcasting notification:", BroadcastValue)
+				log.Printf("Broadcasting notification to user %d", BroadcastValue.Data.Notification.UserID)
 				websocket.NewWebSocketManager().NotifyUser(fmt.Sprintf("%d", BroadcastValue.Data.Notification.UserID), BroadcastValue)
 			}
 		case <-time.After(30 * time.Second):
@@ -125,14 +125,14 @@ func listenForNotifications(dsn string) {
 	if err != nil {
 		log.Fatal("Failed to LISTEN on channel:", err)
 	}
-	fmt.Println("Listening for notifications...")
+	log.Println("Listening for member notifications...")
 
 	// Infinite loop to receive notifications
 	for {
 		select {
 		case notification := <-listener.Notify:
 			if notification != nil {
-				fmt.Println("Received notification:", notification.Extra)
+				log.Println("Received member notification:", notification.Extra)
 			}
 		case <-time.After(30 * time.Second):
 			// Send a ping to keep the connection alive
