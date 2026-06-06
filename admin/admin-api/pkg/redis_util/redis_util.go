@@ -25,3 +25,11 @@ func (r *RedisUtil) SetCacheKey(key string, value interface{}, ctx context.Conte
 	}
 	return r.client.Set(ctx, key, data, 15*time.Minute).Err()
 }
+
+func (r *RedisUtil) GetCacheKey(key string, dest interface{}, ctx context.Context) error {
+	data, err := r.client.Get(ctx, key).Result()
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal([]byte(data), dest)
+}

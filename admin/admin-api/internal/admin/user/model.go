@@ -115,9 +115,9 @@ func (u *User) New(userReq *UserCreateRequest, uCtx *share.UserContext, db_pool 
 	}
 	local_now := time.Now().In(location)
 
-	is_username, err := sql.IsExits("tbl_users", "user_name", userReq.UserName, db_pool)
+	is_username, err := sql.IsExits("tbl_users", "user_name", strings.ToUpper(userReq.UserName), db_pool)
 	if err != nil {
-		return err
+		return err 
 	}
 	if is_username {
 		return fmt.Errorf("username:`%s` already exists", userReq.UserName)
@@ -133,16 +133,17 @@ func (u *User) New(userReq *UserCreateRequest, uCtx *share.UserContext, db_pool 
 		return fmt.Errorf("failed to generate order value: %w", err)
 	}
 
+	statusID := 1
+	createdByInt64 := int64(*createdByID)
+
 	u.FirstName = userReq.FirstName
 	u.LastName = userReq.LastName
 	u.UserName = strings.ToUpper(strings.TrimSpace(userReq.UserName))
 	u.Password = userReq.Password
 	u.Email = userReq.Email
 	u.LoginSession = &sessionString
-	statusID := 1
 	u.StatusID = &statusID
 	u.Order = orderValue
-	createdByInt64 := int64(*createdByID)
 	u.CreatedBy = &createdByInt64
 	u.CreatedAt = local_now
 	u.RoleID = userReq.RoleID

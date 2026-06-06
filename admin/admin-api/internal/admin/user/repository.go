@@ -89,6 +89,16 @@ func (r *UserRepoImpl) Show(userRequest UserShowRequest) (*UserResponse, *error_
 func (r *UserRepoImpl) ShowOne(id int64) (*UserResponse, *error_responses.ErrorResponse) {
 	msg := error_responses.ErrorResponse{}
 
+	// Read-through cache
+	cacheKey := fmt.Sprintf("user_info_id:%d", id)
+	if r.redis != nil {
+		rdb := redis_util.NewRedisUtil(r.redis)
+		var cached User
+		if err := rdb.GetCacheKey(cacheKey, &cached, context.Background()); err == nil {
+			return &UserResponse{Users: []User{cached}, Total: 1}, nil
+		}
+	}
+
 	var user User
 	err := r.db.Get(&user,
 		`SELECT * FROM tbl_users WHERE id = $1 AND deleted_at IS NULL LIMIT 1`, id,
@@ -96,6 +106,13 @@ func (r *UserRepoImpl) ShowOne(id int64) (*UserResponse, *error_responses.ErrorR
 	if err != nil {
 		return nil, msg.NewErrorResponse("user_not_found", err)
 	}
+
+	// Populate cache
+	if r.redis != nil {
+		rdb := redis_util.NewRedisUtil(r.redis)
+		_ = rdb.SetCacheKey(cacheKey, &user, context.Background())
+	}
+
 	return &UserResponse{
 		Users: []User{user}, Total: 1,
 	}, nil
@@ -126,7 +143,7 @@ func (r *UserRepoImpl) Create(user *User) *error_responses.ErrorResponse {
 			:role_name, :role_id, :login_session, :status_id, :order,
 			:created_by, :created_at
 		) RETURNING id`
-		
+
 	rows, err := r.db.NamedQuery(query, user)
 	if err != nil {
 		return msg.NewErrorResponse("database_error", err)
