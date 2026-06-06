@@ -1,9 +1,12 @@
 package utls
 
 import (
-	"admin-api/pkg/translate"
 
+	// Community packages
 	"github.com/gofiber/fiber/v3"
+
+	// Internal packages
+	"admin-api/pkg/translate"
 )
 
 func Translate(MessageID string, param *string, c fiber.Ctx) string {

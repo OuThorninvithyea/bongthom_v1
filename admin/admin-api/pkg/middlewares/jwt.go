@@ -1,6 +1,8 @@
 package middlewares
 
 import (
+
+	// Commnuity packages
 	"fmt"
 	"log"
 	"net/http"
@@ -8,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	// Internal packages
 	"admin-api/internal/admin/auth"
 	response "admin-api/pkg/http"
 	types "admin-api/pkg/share"
