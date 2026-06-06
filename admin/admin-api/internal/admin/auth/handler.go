@@ -39,7 +39,7 @@ func NewAuthHandler(a *fiber.App, db *sqlx.DB, rdb *redis.Client) *AuthHandler {
 func (a *AuthHandler) Login(c fiber.Ctx) error {
 
 	req := &AuthRequest{}
-	// validator is dev package,
+	// validator is dev package, check and validate with struct & tag filed
 	v := utls.NewValidator()
 	if err := req.bind(c, v); err != nil {
 		var ve validator.ValidationErrors
