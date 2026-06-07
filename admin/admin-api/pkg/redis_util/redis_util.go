@@ -12,10 +12,11 @@ import (
 
 type RedisUtil struct {
 	client *redis.Client
+	ttl    time.Duration
 }
 
-func NewRedisUtil(client *redis.Client) *RedisUtil {
-	return &RedisUtil{client: client}
+func NewRedisUtil(client *redis.Client, ttl time.Duration) *RedisUtil {
+	return &RedisUtil{client: client, ttl: ttl}
 }
 
 func (r *RedisUtil) SetCacheKey(key string, value interface{}, ctx context.Context) error {
@@ -23,7 +24,7 @@ func (r *RedisUtil) SetCacheKey(key string, value interface{}, ctx context.Conte
 	if err != nil {
 		return err
 	}
-	return r.client.Set(ctx, key, data, 15*time.Minute).Err()
+	return r.client.Set(ctx, key, data, r.ttl).Err()
 }
 
 func (r *RedisUtil) GetCacheKey(key string, dest interface{}, ctx context.Context) error {

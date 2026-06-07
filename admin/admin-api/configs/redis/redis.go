@@ -4,23 +4,33 @@ import (
 
 	// Commmnuity pacakges
 	"context"
-	"os"
+	"fmt"
 
 	"github.com/redis/go-redis/v9"
+
+	// Internal packages
+	config "admin-api/configs"
 )
 
 var Client *redis.Client
 
 func NewRedisClient() *redis.Client {
-	addr := os.Getenv("REDIS_ADDR")
-	if addr == "" {
-		addr = "localhost:6379"
+	cfg := config.InitRedis()
+
+	host := cfg.RedisHost
+	if host == "" {
+		host = "localhost"
 	}
+	port := cfg.RedisPort
+	if port == "" {
+		port = "6379"
+	}
+	addr := fmt.Sprintf("%s:%s", host, port)
 
 	Client = redis.NewClient(&redis.Options{
 		Addr:     addr,
-		Password: os.Getenv("REDIS_PASSWORD"),
-		DB:       0,
+		Password: cfg.RedisPassword,
+		DB:       cfg.RedisDB,
 	})
 
 	// Verify connection — crash if unavailable

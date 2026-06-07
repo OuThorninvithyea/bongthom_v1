@@ -6,11 +6,14 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/redis/go-redis/v9"
 
 	// Interntal pacakges
+
+	config "admin-api/configs"
 	"admin-api/pkg/redis_util"
 	error_responses "admin-api/pkg/responses"
 	custom_sql "admin-api/pkg/sql"
@@ -26,12 +29,19 @@ type UserRepo interface {
 }
 
 type UserRepoImpl struct {
-	db    *sqlx.DB
-	redis *redis.Client
+	db       *sqlx.DB
+	redis    *redis.Client
+	cacheTTL time.Duration
 }
 
 func NewUserRepoImpl(db *sqlx.DB, rdb *redis.Client) UserRepo {
-	return &UserRepoImpl{db: db, redis: rdb}
+	cfg := config.InitRedis()
+	ttl := time.Duration(cfg.RedisExpire) * time.Second
+	return &UserRepoImpl{
+		db:       db,
+		redis:    rdb,
+		cacheTTL: ttl,
+	}
 }
 
 func (r *UserRepoImpl) Show(userRequest UserShowRequest) (*UserResponse, *error_responses.ErrorResponse) {
@@ -92,7 +102,7 @@ func (r *UserRepoImpl) ShowOne(id int64) (*UserResponse, *error_responses.ErrorR
 	// Read-through cache
 	cacheKey := fmt.Sprintf("user_info_id:%d", id)
 	if r.redis != nil {
-		rdb := redis_util.NewRedisUtil(r.redis)
+		rdb := redis_util.NewRedisUtil(r.redis, r.cacheTTL)
 		var cached User
 		if err := rdb.GetCacheKey(cacheKey, &cached, context.Background()); err == nil {
 			return &UserResponse{Users: []User{cached}, Total: 1}, nil
@@ -109,7 +119,7 @@ func (r *UserRepoImpl) ShowOne(id int64) (*UserResponse, *error_responses.ErrorR
 
 	// Populate cache
 	if r.redis != nil {
-		rdb := redis_util.NewRedisUtil(r.redis)
+		rdb := redis_util.NewRedisUtil(r.redis, r.cacheTTL)
 		_ = rdb.SetCacheKey(cacheKey, &user, context.Background())
 	}
 
@@ -157,7 +167,7 @@ func (r *UserRepoImpl) Create(user *User) *error_responses.ErrorResponse {
 
 	// Set redis data
 	key := fmt.Sprintf("user_info_id:%d", user.ID)
-	rdb := redis_util.NewRedisUtil(r.redis)
+	rdb := redis_util.NewRedisUtil(r.redis, r.cacheTTL)
 	rdb.SetCacheKey(key, user, context.Background())
 
 	return nil

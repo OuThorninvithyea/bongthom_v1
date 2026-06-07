@@ -18,18 +18,14 @@ import (
 	error_responses "admin-api/pkg/responses"
 )
 
-type AuthServiceImpl struct {
-	Repo  AuthRepo
-	Redis *redis.Client
-}
-
 type AuthService interface {
 	Login(username string, password string) (*AuthLoginReponse, *error_responses.ErrorResponse)
 	CheckSession(loginSession string, userID int64) (bool, *error_responses.ErrorResponse)
 }
 
-func NewAuthService(db *sqlx.DB, rdb *redis.Client) AuthService {
-	return NewAuthServiceImpl(db, rdb)
+type AuthServiceImpl struct {
+	Repo  AuthRepo
+	Redis *redis.Client
 }
 
 func NewAuthServiceImpl(db *sqlx.DB, rdb *redis.Client) *AuthServiceImpl {
@@ -38,6 +34,9 @@ func NewAuthServiceImpl(db *sqlx.DB, rdb *redis.Client) *AuthServiceImpl {
 		Repo:  r,
 		Redis: rdb,
 	}
+}
+func NewAuthService(db *sqlx.DB, rdb *redis.Client) AuthService {
+	return NewAuthServiceImpl(db, rdb)
 }
 
 func (s *AuthServiceImpl) Login(username string, password string) (*AuthLoginReponse, *error_responses.ErrorResponse) {
@@ -52,25 +51,32 @@ func (s *AuthServiceImpl) Login(username string, password string) (*AuthLoginRep
 	// Step 2: generate login session UUID
 	loginSession := uuid.New().String()
 
-	// Step 3: read JWT secret
+	// Step 3: read JWT secret and expiry
 	secret := os.Getenv("JWT_SECRET_KEY")
 	if secret == "" {
 		secret = "change-me-in-production"
 	}
 
+	jwtDuration := 15 * time.Minute // default
+	if v := os.Getenv("JWT_EXPIRE"); v != "" {
+		if d, err := time.ParseDuration(v); err == nil && d > 0 {
+			jwtDuration = d
+		}
+	}
+
 	// Step 5: generate access token (business logic — lives in service)
 	accessToken, _, jerr := jwtauth.GenerateToken(
 		user.ID, user.UserName, user.RoleID, loginSession,
-		secret, 15*time.Minute,
+		secret, jwtDuration,
 	)
 	if jerr != nil {
 		return nil, msg.NewErrorResponse("token_generation_failed", jerr)
 	}
 
-	// Step 5: store login session in Redis (15min TTL — matches JWT expiry)
+	// Step 5: store login session in Redis (TTL matches JWT expiry)
 	if err := s.Redis.Set(context.Background(),
 		fmt.Sprintf("session:%d", user.ID), loginSession,
-		15*time.Minute,
+		jwtDuration,
 	).Err(); err != nil {
 		logs.NewCustomLog("redis_session_set_failed", err.Error(), "warn")
 	}

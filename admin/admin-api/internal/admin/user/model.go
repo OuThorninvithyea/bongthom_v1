@@ -3,9 +3,9 @@ package user
 import (
 
 	// Community pacakges
-	sql "admin-api/pkg/sql"
 	"admin-api/pkg/logs"
 	"admin-api/pkg/share"
+	sql "admin-api/pkg/sql"
 	"admin-api/pkg/utls"
 	"fmt"
 	"os"
@@ -117,7 +117,7 @@ func (u *User) New(userReq *UserCreateRequest, uCtx *share.UserContext, db_pool 
 
 	is_username, err := sql.IsExits("tbl_users", "user_name", strings.ToUpper(userReq.UserName), db_pool)
 	if err != nil {
-		return err 
+		return err
 	}
 	if is_username {
 		return fmt.Errorf("username:`%s` already exists", userReq.UserName)
