@@ -41,11 +41,11 @@ func (wm *WebSocketManager) AddClient(client *Client) {
 
 }
 
-func (wm *WebSocketManager) RemoveClient(clientId string) {
+func (wm *WebSocketManager) RemoveClient(clientID string) {
 	wm.mu.Lock()
 	defer wm.mu.Unlock()
-	delete(global_clients, clientId)
-	log.Printf("Client removed: %s", clientId)
+	delete(global_clients, clientID)
+	log.Printf("Client removed: %s", clientID)
 }
 
 func (wm *WebSocketManager) Broadcast(data interface{}) {
