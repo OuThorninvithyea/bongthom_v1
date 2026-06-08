@@ -3,10 +3,11 @@ package websocket
 import (
 	// Community Pacakges
 	"fmt"
+	"log"
+
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v3"
 	"github.com/jmoiron/sqlx"
-	"log"
 
 	// Intenral Pacakges
 	"admin-api/pkg/share"
@@ -38,7 +39,7 @@ func (route *WebSocketRoute) HandleConnection(conn *websocket.Conn) {
 	userID := userContext.(share.UserContext).UserID
 	clientID := fmt.Sprintf("user-%v", userID)
 
-	client := &Client{Conn: conn, Id: clientID}
+	client := &Client{Conn: conn, ID: clientID}
 	route.manager.AddClient(client)
 
 	defer route.manager.RemoveClient(clientID)

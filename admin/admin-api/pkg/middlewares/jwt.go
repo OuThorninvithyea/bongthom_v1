@@ -111,7 +111,7 @@ func handleUserContext(c fiber.Ctx, uclaim jwt.MapClaims, db *sqlx.DB, redis *re
 		LoginSession: uclaim["login_session"].(string),
 		Exp:          time.Unix(int64(uclaim["exp"].(float64)), 0),
 		UserAgent:    c.Get("User-Agent", "unknown"),
-		Ip:           c.IP(),
+		IP:           c.IP(),
 	}
 	c.Locals("UserContext", uCtx)
 

@@ -11,11 +11,11 @@ import (
 	"github.com/gofiber/contrib/websocket"
 )
 
-var gobal_clients = make(map[string]*Client)
+var global_clients = make(map[string]*Client)
 
 type Client struct {
 	Conn *websocket.Conn
-	Id   string
+	ID   string
 }
 
 type WebSocketManager struct {
@@ -30,21 +30,21 @@ func NewWebSocketManager() *WebSocketManager {
 }
 
 func (wm *WebSocketManager) PrintlnClient() {
-	fmt.Println("admin client for websocket", gobal_clients)
+	fmt.Println("admin client for websocket", global_clients)
 }
 
 func (wm *WebSocketManager) AddClient(client *Client) {
 	wm.mu.Lock()
 	defer wm.mu.Unlock()
-	gobal_clients[client.Id] = client
-	log.Printf("Client added: %s", client.Id)
+	global_clients[client.ID] = client
+	log.Printf("Client added: %s", client.ID)
 
 }
 
 func (wm *WebSocketManager) RemoveClient(clientId string) {
 	wm.mu.Lock()
 	defer wm.mu.Unlock()
-	delete(gobal_clients, clientId)
+	delete(global_clients, clientId)
 	log.Printf("Client removed: %s", clientId)
 }
 
@@ -65,12 +65,12 @@ func (wm *WebSocketManager) Broadcast(data interface{}) {
 
 	fmt.Println("data")
 
-	for _, client := range gobal_clients {
+	for _, client := range global_clients {
 
 		if err := client.Conn.WriteJSON(data); err != nil {
-			log.Printf("Broadcast error for client %s: %v", client.Id, err)
+			log.Printf("Broadcast error for client %s: %v", client.ID, err)
 			client.Conn.Close()
-			delete(gobal_clients, client.Id)
+			delete(global_clients, client.ID)
 		}
 	}
 }
@@ -79,7 +79,7 @@ func (manager *WebSocketManager) Emit(clientID string, data interface{}) {
 	manager.mu.Lock()
 	defer manager.mu.Unlock()
 
-	client, ok := gobal_clients[clientID]
+	client, ok := global_clients[clientID]
 	if !ok {
 		log.Printf("Client %s not found", clientID)
 		return
@@ -89,7 +89,7 @@ func (manager *WebSocketManager) Emit(clientID string, data interface{}) {
 	if err != nil {
 		log.Printf("Error sending message to client %s: %v", clientID, err)
 		client.Conn.Close()
-		delete(gobal_clients, clientID)
+		delete(global_clients, clientID)
 	}
 }
 
@@ -98,10 +98,10 @@ func (wm *WebSocketManager) NotifyUser(userID string, data interface{}) {
 	wm.mu.RLock()
 	defer wm.mu.RUnlock()
 	wm.PrintlnClient()
-	log.Printf("Clients available: %+v", gobal_clients)
+	log.Printf("Clients available: %+v", global_clients)
 
 	clientID := fmt.Sprintf("user-%s", userID)
-	client, ok := gobal_clients[clientID]
+	client, ok := global_clients[clientID]
 	if !ok {
 		log.Printf("Client %s not connected", clientID)
 		return
@@ -111,6 +111,6 @@ func (wm *WebSocketManager) NotifyUser(userID string, data interface{}) {
 	if err != nil {
 		log.Printf("Error sending notification to client %s: %v", clientID, err)
 		client.Conn.Close()
-		delete(gobal_clients, clientID)
+		delete(global_clients, clientID)
 	}
 }

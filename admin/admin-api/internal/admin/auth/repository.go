@@ -29,6 +29,7 @@ func (r *AuthRepoImpl) Login(username string, password string) (*Auth, *error_re
 	var user Auth
 	err := r.db.Get(&user,
 		`SELECT id, user_name, role_id
+
 		 FROM tbl_users
 		 WHERE user_name = $1 AND password = $2 AND deleted_at IS NULL
 		 LIMIT 1`,

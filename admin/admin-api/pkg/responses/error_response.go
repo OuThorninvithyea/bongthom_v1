@@ -18,7 +18,7 @@ func (e *ErrorResponse) Error() string {
 }
 
 func (e *ErrorResponse) ErrorString() string {
-	return fmt.Sprintf("MessageId: %s, Error:%v", e.MessageID, e.Err)
+	return fmt.Sprintf("MessageID: %s, Error:%v", e.MessageID, e.Err)
 }
 
 func (e *ErrorResponse) NewErrorResponse(messageID string, err error) *ErrorResponse {
