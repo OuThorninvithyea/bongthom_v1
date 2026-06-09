@@ -12,7 +12,7 @@ import (
 type AuthRepo interface {
 	Login(username string, password string) (*Auth, *error_responses.ErrorResponse)
 	UpdateLoginSession(userID int64, loginSession string) *error_responses.ErrorResponse
-	CheckDatabaseLoginSession(userID int64, loginSession string) (*Auth, *error_responses.ErrorResponse)
+	CheckDatabaseLoginSession(userID int64, loginSession string) *error_responses.ErrorResponse
 }
 
 type AuthRepoImpl struct {
@@ -55,7 +55,7 @@ func (r *AuthRepoImpl) UpdateLoginSession(userID int64, loginSession string) *er
 	return nil
 }
 
-func (r *AuthRepoImpl) CheckDatabaseLoginSession(userID int64, loginSession string) (*Auth, *error_responses.ErrorResponse) {
+func (r *AuthRepoImpl) CheckDatabaseLoginSession(userID int64, loginSession string) *error_responses.ErrorResponse {
 	msg := error_responses.ErrorResponse{}
 
 	var user Auth
@@ -67,8 +67,8 @@ func (r *AuthRepoImpl) CheckDatabaseLoginSession(userID int64, loginSession stri
 		userID, loginSession,
 	)
 	if err != nil {
-		return nil, msg.NewErrorResponse("invalid_session", err)
+		return msg.NewErrorResponse("invalid_session", err)
 	}
 
-	return &user, nil
+	return nil
 }

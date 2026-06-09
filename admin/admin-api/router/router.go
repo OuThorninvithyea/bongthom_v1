@@ -22,3 +22,4 @@ func New() *fiber.App {
 	}))
 	return f
 }
+

@@ -103,7 +103,7 @@ func (s *AuthServiceImpl) CheckSession(loginSession string, userID int64) (bool,
 	}
 
 	// Slow path: PostgreSQL fallback (Redis down or key missing)
-	_, dbErr := s.Repo.CheckDatabaseLoginSession(userID, loginSession)
+	dbErr := s.Repo.CheckDatabaseLoginSession(userID, loginSession)
 	if dbErr == nil {
 		return true, nil
 	}

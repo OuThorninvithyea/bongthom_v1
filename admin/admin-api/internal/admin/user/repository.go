@@ -12,7 +12,6 @@ import (
 	"github.com/redis/go-redis/v9"
 
 	// Interntal pacakges
-
 	config "admin-api/configs"
 	"admin-api/pkg/redis_util"
 	error_responses "admin-api/pkg/responses"
@@ -43,6 +42,7 @@ func NewUserRepoImpl(db *sqlx.DB, rdb *redis.Client) UserRepo {
 		cacheTTL: ttl,
 	}
 }
+
 
 func (r *UserRepoImpl) Show(userRequest UserShowRequest) (*UserResponse, *error_responses.ErrorResponse) {
 	// Calculatings for skipping user in
