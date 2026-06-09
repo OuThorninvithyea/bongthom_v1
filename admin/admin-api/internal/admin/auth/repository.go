@@ -10,7 +10,7 @@ import (
 )
 
 type AuthRepo interface {
-	Login(username string, password string) (*Auth, *error_responses.ErrorResponse)
+	Login(username string) (*Auth, *error_responses.ErrorResponse)
 	UpdateLoginSession(userID int64, loginSession string) *error_responses.ErrorResponse
 	CheckDatabaseLoginSession(userID int64, loginSession string) *error_responses.ErrorResponse
 }
@@ -23,17 +23,16 @@ func NewAuthRepoImpl(db *sqlx.DB) AuthRepo {
 	return &AuthRepoImpl{db: db}
 }
 
-func (r *AuthRepoImpl) Login(username string, password string) (*Auth, *error_responses.ErrorResponse) {
+func (r *AuthRepoImpl) Login(username string) (*Auth, *error_responses.ErrorResponse) {
 	msg := error_responses.ErrorResponse{}
 
 	var user Auth
 	err := r.db.Get(&user,
-		`SELECT id, user_name, role_id
-
+		`SELECT id, user_name, role_id, password
 		 FROM tbl_users
-		 WHERE user_name = $1 AND password = $2 AND deleted_at IS NULL
+		 WHERE user_name = $1 AND deleted_at IS NULL
 		 LIMIT 1`,
-		username, password,
+		username,
 	)
 
 	if err != nil {
@@ -49,6 +48,7 @@ func (r *AuthRepoImpl) UpdateLoginSession(userID int64, loginSession string) *er
 		`UPDATE tbl_users SET login_session = $1, last_login = NOW() WHERE id = $2`,
 		loginSession, userID,
 	)
+
 	if err != nil {
 		return msg.NewErrorResponse("database_error", err)
 	}

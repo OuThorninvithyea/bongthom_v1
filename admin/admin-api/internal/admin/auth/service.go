@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/redis/go-redis/v9"
+	"golang.org/x/crypto/bcrypt"
 
 	// internal pacakges
 	jwtauth "admin-api/pkg/common/auth"
@@ -35,6 +36,7 @@ func NewAuthServiceImpl(db *sqlx.DB, rdb *redis.Client) *AuthServiceImpl {
 		Redis: rdb,
 	}
 }
+
 func NewAuthService(db *sqlx.DB, rdb *redis.Client) AuthService {
 	return NewAuthServiceImpl(db, rdb)
 }
@@ -43,9 +45,13 @@ func (s *AuthServiceImpl) Login(username string, password string) (*AuthLoginRep
 	msg := error_responses.ErrorResponse{}
 
 	// Step 1: find user (repo only does DB work)
-	user, err := s.Repo.Login(username, password)
+	user, err := s.Repo.Login(username)
 	if err != nil {
 		return nil, err
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+		return nil, msg.NewErrorResponse("invalid_credentials", err)
 	}
 
 	// Step 2: generate login session UUID
