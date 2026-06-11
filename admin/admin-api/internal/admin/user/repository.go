@@ -43,7 +43,6 @@ func NewUserRepoImpl(db *sqlx.DB, rdb *redis.Client) UserRepo {
 	}
 }
 
-
 func (r *UserRepoImpl) Show(userRequest UserShowRequest) (*UserResponse, *error_responses.ErrorResponse) {
 	// Calculatings for skipping user in
 	var per_page = userRequest.PageOption.Perpage

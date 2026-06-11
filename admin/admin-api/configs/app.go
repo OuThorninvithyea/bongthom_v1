@@ -2,9 +2,10 @@ package config
 
 import (
 	// Community Packages
-	"github.com/joho/godotenv"
 	"log"
 	"os"
+
+	"github.com/joho/godotenv"
 
 	// Internal Packages
 	"admin-api/pkg/utls"
@@ -18,7 +19,7 @@ type AppConfig struct {
 func NewConfig() *AppConfig {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatalf("Error Loading .env file %v", err)
+		log.Println("No .env file, using environment variables")
 	}
 	host := os.Getenv("API_HOST")
 	port := utls.GetenvInt("API_PORT", 8888)

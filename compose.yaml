@@ -1,0 +1,51 @@
+services:
+  server:
+    build:
+      context: .
+      target: final
+    ports:
+      - 9000:9000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      DATABASE_URL: "postgresql://outhorninvuth:postgres@postgres:5432/postgres?sslmode=disable"
+      API_HOST: "0.0.0.0"
+      API_PORT: "9000"
+      TIME_ZONE: "Asia/Phnom_Penh"
+      JWT_SECRET_KEY: "adf#s1@dfss"
+      JWT_EXPIRE: 24h
+      REDIS_HOST: "redis"
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ""
+      REDIS_DB_NUMBER: 0
+      REDIS_EXPIRE: 60
+
+  postgres:
+    image: postgres:18
+    restart: always
+    user: postgres
+    environment:
+      POSTGRES_USER: outhorninvuth
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - 5432:5432
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U outhorninvuth -d postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7
+    restart: always
+    ports:
+      - 6379:6379
+
+volumes:
+  pgdata:
