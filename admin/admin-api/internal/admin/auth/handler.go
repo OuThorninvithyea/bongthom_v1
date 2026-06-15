@@ -1,11 +1,5 @@
 package auth
 
-// HANDLER LAYER — HTTP only. No business logic. No SQL.
-// Job: bind JSON → validate input → call service → translate errors → respond.
-//
-// Example: "POST /login {username, password} → is username ≥4 chars?
-//          → call service.Login() → translate result → return JSON"
-
 import (
 	// Commnuity Packages
 	"errors"

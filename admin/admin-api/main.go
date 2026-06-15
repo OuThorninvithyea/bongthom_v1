@@ -3,11 +3,11 @@ package main
 import (
 	// Commnuity packages
 	"fmt"
-	
+
 	// Internal packages
 	config "admin-api/configs"
 	database "admin-api/configs/databases"
-	 "admin-api/configs/redis"
+	"admin-api/configs/redis"
 	"admin-api/handler"
 	"admin-api/internal/admin/websocket"
 	"admin-api/pkg/logs"
@@ -36,7 +36,6 @@ func main() {
 	if err := translate.Init(); err != nil {
 		logs.NewCustomLog("FailedInitializeI18n", err.Err.Error(), "error")
 	}
-
 
 	// Initalize service handlers e.g 'admin', 'front'
 	h := handler.NewServiceHandlers(app, db_pool, rdb, ws_manager)

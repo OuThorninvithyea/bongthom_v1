@@ -80,7 +80,7 @@ func (r *UserRepoImpl) Show(userRequest UserShowRequest) (*UserResponse, *error_
 	if err != nil {
 		return nil, msg.NewErrorResponse("database_error", err)
 	}
-	var users []User
+	users := make([]User, 0)
 	query := fmt.Sprintf(
 		`SELECT id, user_name, first_name, last_name, email, role_name, role_id, is_admin,
 		 login_session, last_login, currency_id, language_id, status_id, created_at, updated_at
