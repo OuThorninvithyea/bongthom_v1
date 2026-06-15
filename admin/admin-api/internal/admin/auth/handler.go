@@ -85,7 +85,7 @@ func (a *AuthHandler) Login(c fiber.Ctx) error {
 				),
 			)
 		}
-		return c.Status(fiber.StatusOK).JSON(
+		return c.Status(fiber.StatusBadRequest).JSON(
 			response.NewResponse(msg, constants.Login_success, rs),
 		)
 	}
