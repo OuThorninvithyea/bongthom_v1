@@ -27,7 +27,7 @@ import (
 func NewJwtMiddleware(app *fiber.App, db_pool *sqlx.DB, redis *redis.Client) {
 	errs := godotenv.Load()
 	if errs != nil {
-		log.Fatalf("Error loading .env file")
+		log.Println("No .env file, using environment variables")
 	}
 	secret_key := os.Getenv("JWT_SECRET_KEY")
 
