@@ -25,3 +25,21 @@ jobs:
       - name: Vet
         working-directory: admin/admin-api
         run: go vet ./...
+
+      - name: Notify on failure
+        if: failure()
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          title: "❌ CI failed — bongthom_v1"
+          description: "Commit: ${{ github.event.head_commit.message }}"
+          color: 0xff0000
+
+      - name: Notify on success
+        if: success()
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          title: "✅ CI passed — bongthom_v1"
+          description: "Commit: ${{ github.event.head_commit.message }}"
+          color: 0x00ff00
