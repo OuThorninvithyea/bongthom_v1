@@ -1,4 +1,33 @@
 services:
+  # ── Run database migrations before server starts ──
+  migrate:
+    image: migrate/migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./migrations:/migrations
+    command:
+      - "-path=/migrations"
+      - "-database=postgresql://outhorninvuth:postgres@postgres:5432/postgres?sslmode=disable"
+      - "up"
+    restart: "no"
+
+  # ── Seed initial data after migrations ──
+  seed:
+    image: postgres:18
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    volumes:
+      - ./seed.sql:/seed.sql
+    command: >
+      sh -c "psql -h postgres -U outhorninvuth -d postgres -f /seed.sql"
+    environment:
+      PGPASSWORD: postgres
+    restart: "no"
+
+  # ── Your API ──
   server:
     build:
       context: .
@@ -11,6 +40,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+      seed:
+        condition: service_completed_successfully
     environment:
       DATABASE_URL: "postgresql://outhorninvuth:postgres@postgres:5432/postgres?sslmode=disable"
       API_HOST: "0.0.0.0"
