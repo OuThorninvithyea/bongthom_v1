@@ -127,10 +127,10 @@ func (r *UserRepoImpl) ShowOne(id int64) (*UserResponse, *error_responses.ErrorR
 	}, nil
 }
 
-func (r *UserRepoImpl) GetByUserName(userName string) (*User, *error_responses.ErrorResponse) {
+func (r *UserRepoImpl) GetByUserName(username string) (*User, *error_responses.ErrorResponse) {
 	var user User
 	err := r.db.Get(&user,
-		`SELECT * FROM tbl_users WHERE user_name = $1 LIMIT 1`, userName,
+		`SELECT * FROM tbl_users WHERE user_name = $1 LIMIT 1`, username,
 	)
 	if err != nil {
 		return nil, nil // not found is OK — caller checks

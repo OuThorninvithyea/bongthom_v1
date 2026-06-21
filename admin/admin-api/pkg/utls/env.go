@@ -1,7 +1,6 @@
 package utls
 
 import (
-
 	// Community pacakges
 	"os"
 	"strconv"

@@ -10,7 +10,7 @@ import (
 )
 
 type AuthRepo interface {
-	Login(username string) (*Auth, *error_responses.ErrorResponse)
+	Login(ureq *AuthRequest) (*Auth, *error_responses.ErrorResponse)
 	UpdateLoginSession(userID int64, loginSession string) *error_responses.ErrorResponse
 	CheckDatabaseLoginSession(userID int64, loginSession string) *error_responses.ErrorResponse
 }
@@ -23,18 +23,16 @@ func NewAuthRepoImpl(db *sqlx.DB) AuthRepo {
 	return &AuthRepoImpl{db: db}
 }
 
-func (r *AuthRepoImpl) Login(username string) (*Auth, *error_responses.ErrorResponse) {
+func (r *AuthRepoImpl) Login(ureq *AuthRequest) (*Auth, *error_responses.ErrorResponse) {
 	msg := error_responses.ErrorResponse{}
-
 	var user Auth
 	err := r.db.Get(&user,
 		`SELECT id, user_name, role_id, password
 		 FROM tbl_users
 		 WHERE user_name = $1 AND deleted_at IS NULL
 		 LIMIT 1`,
-		username,
+		ureq.Username,
 	)
-
 	if err != nil {
 		return nil, msg.NewErrorResponse("invalid_credentials", err)
 	}
@@ -66,6 +64,7 @@ func (r *AuthRepoImpl) CheckDatabaseLoginSession(userID int64, loginSession stri
 		 LIMIT 1`,
 		userID, loginSession,
 	)
+
 	if err != nil {
 		return msg.NewErrorResponse("invalid_session", err)
 	}

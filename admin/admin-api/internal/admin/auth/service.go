@@ -20,7 +20,7 @@ import (
 )
 
 type AuthService interface {
-	Login(username string, password string) (*AuthLoginReponse, *error_responses.ErrorResponse)
+	Login(usreq *AuthRequest) (*AuthLoginReponse, *error_responses.ErrorResponse)
 	CheckSession(loginSession string, userID int64) (bool, *error_responses.ErrorResponse)
 }
 
@@ -41,16 +41,16 @@ func NewAuthService(db *sqlx.DB, rdb *redis.Client) AuthService {
 	return NewAuthServiceImpl(db, rdb)
 }
 
-func (s *AuthServiceImpl) Login(username string, password string) (*AuthLoginReponse, *error_responses.ErrorResponse) {
+func (s *AuthServiceImpl) Login(ureq *AuthRequest) (*AuthLoginReponse, *error_responses.ErrorResponse) {
 	msg := error_responses.ErrorResponse{}
 
 	// Step 1: find user (repo only does DB work)
-	user, err := s.Repo.Login(username)
+	user, err := s.Repo.Login(ureq)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(ureq.Password)); err != nil {
 		return nil, msg.NewErrorResponse("invalid_credentials", err)
 	}
 
@@ -75,6 +75,7 @@ func (s *AuthServiceImpl) Login(username string, password string) (*AuthLoginRep
 		user.ID, user.UserName, user.RoleID, loginSession,
 		secret, jwtDuration,
 	)
+	
 	if jerr != nil {
 		return nil, msg.NewErrorResponse("token_generation_failed", jerr)
 	}
