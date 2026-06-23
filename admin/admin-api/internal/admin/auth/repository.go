@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"database/sql"
 
 	// Commnunity pacakges
 	"github.com/jmoiron/sqlx"
@@ -34,7 +35,10 @@ func (r *AuthRepoImpl) Login(ureq *AuthRequest) (*Auth, *error_responses.ErrorRe
 		ureq.Username,
 	)
 	if err != nil {
-		return nil, msg.NewErrorResponse("invalid_credentials", err)
+		if err == sql.ErrNoRows {
+			return nil, msg.NewErrorResponse("invalid_credentials", err)
+		}
+		return nil, msg.NewErrorResponse("database_error", err)
 	}
 
 	return &user, nil

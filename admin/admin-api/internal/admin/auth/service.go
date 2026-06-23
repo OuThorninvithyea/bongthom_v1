@@ -44,14 +44,21 @@ func NewAuthService(db *sqlx.DB, rdb *redis.Client) AuthService {
 func (s *AuthServiceImpl) Login(ureq *AuthRequest) (*AuthLoginReponse, *error_responses.ErrorResponse) {
 	msg := error_responses.ErrorResponse{}
 
-	SHashAndPassword([]byte(user.Password), []byte(ureq.Password)); err != nil {
+	// Step 1: find user (repo only does DB work)
+	user, err := s.Repo.Login(ureq)
+	if err != nil {
+		return nil, err
+	}
+
+	// Step 2: check password
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(ureq.Password)); err != nil {
 		return nil, msg.NewErrorResponse("invalid_credentials", err)
 	}
 
-	// Step 2: generate login session UUID
+	// Step 3: generate login session UUID
 	loginSession := uuid.New().String()
 
-	// Step 3: read JWT secret and expiry
+	// Step 4: read JWT secret and expiry
 	secret := os.Getenv("JWT_SECRET_KEY")
 	if secret == "" {
 		secret = "change-me-in-production"
@@ -64,7 +71,7 @@ func (s *AuthServiceImpl) Login(ureq *AuthRequest) (*AuthLoginReponse, *error_re
 		}
 	}
 
-	// Step 5: generate access token (business logic — lives in service)
+	// Step 5: generate access token
 	accessToken, _, jerr := jwtauth.GenerateToken(
 		user.ID, user.UserName, user.RoleID, loginSession,
 		secret, jwtDuration,
@@ -74,7 +81,7 @@ func (s *AuthServiceImpl) Login(ureq *AuthRequest) (*AuthLoginReponse, *error_re
 		return nil, msg.NewErrorResponse("token_generation_failed", jerr)
 	}
 
-	// Step 5: store login session in Redis (TTL matches JWT expiry)
+	// Step 6: store login session in Redis
 	if err := s.Redis.Set(context.Background(),
 		fmt.Sprintf("session:%d", user.ID), loginSession,
 		jwtDuration,
