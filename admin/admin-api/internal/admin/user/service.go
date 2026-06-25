@@ -12,21 +12,19 @@ import (
 )
 
 type UserService interface {
-	SetUserCtx(ctx share.UserContext)
 	Show(UserShowRequest) (*UserResponse, *error_responses.ErrorResponse)
 	ShowOne(id int64) (*UserResponse, *error_responses.ErrorResponse)
-	Create(req *UserCreateRequest) *error_responses.ErrorResponse
-	Update(id int64, req *UpdateUserRequest, updatedBy int64) (*User, *error_responses.ErrorResponse)
-	Delete(id int64, deletedBy int64) *error_responses.ErrorResponse
+	Create(req *UserCreateRequest, uCtx share.UserContext) *error_responses.ErrorResponse
+	Update(id int64, req *UpdateUserRequest, uCtx share.UserContext) (*User, *error_responses.ErrorResponse)
+	Delete(id int64, uCtx share.UserContext) *error_responses.ErrorResponse
 	GetCreateForm() any
 	GetUpdateForm(id int64) (*UserResponse, *error_responses.ErrorResponse)
 }
 
 type UserServiceImpl struct {
-	Repo    UserRepo
-	Redis   *redis.Client
-	DB      *sqlx.DB
-	UserCtx share.UserContext
+	Repo  UserRepo
+	Redis *redis.Client
+	DB    *sqlx.DB
 }
 
 func NewUserServiceImpl(db *sqlx.DB, rdb *redis.Client) *UserServiceImpl {
@@ -37,10 +35,6 @@ func NewUserServiceImpl(db *sqlx.DB, rdb *redis.Client) *UserServiceImpl {
 	}
 }
 
-func (s *UserServiceImpl) SetUserCtx(ctx share.UserContext) {
-	s.UserCtx = ctx
-}
-
 func (s *UserServiceImpl) Show(userRequest UserShowRequest) (*UserResponse, *error_responses.ErrorResponse) {
 	return s.Repo.Show(userRequest)
 }
@@ -49,11 +43,11 @@ func (s *UserServiceImpl) ShowOne(id int64) (*UserResponse, *error_responses.Err
 	return s.Repo.ShowOne(id)
 }
 
-func (s *UserServiceImpl) Create(req *UserCreateRequest) *error_responses.ErrorResponse {
+func (s *UserServiceImpl) Create(req *UserCreateRequest, uCtx share.UserContext) *error_responses.ErrorResponse {
 	msg := error_responses.ErrorResponse{}
 
 	var user User
-	if err := user.New(req, &s.UserCtx, s.DB); err != nil {
+	if err := user.New(req, &uCtx, s.DB); err != nil {
 		return msg.NewErrorResponse("user_create_failed", err)
 	}
 
@@ -69,7 +63,7 @@ func (s *UserServiceImpl) Create(req *UserCreateRequest) *error_responses.ErrorR
 	return nil
 }
 
-func (s *UserServiceImpl) Update(id int64, req *UpdateUserRequest, updatedBy int64) (*User, *error_responses.ErrorResponse) {
+func (s *UserServiceImpl) Update(id int64, req *UpdateUserRequest, uCtx share.UserContext) (*User, *error_responses.ErrorResponse) {
 	msg := error_responses.ErrorResponse{}
 
 	// Authorization: fetch target user
@@ -83,17 +77,17 @@ func (s *UserServiceImpl) Update(id int64, req *UpdateUserRequest, updatedBy int
 	targetUser := target.Users[0]
 
 	// Check: caller must have equal or higher role than target
-	if s.UserCtx.RoleID > targetUser.RoleID {
+	if uCtx.RoleID > targetUser.RoleID {
 		return nil, msg.NewErrorResponse("access_denied", fmt.Errorf("cannot modify higher-privilege user"))
 	}
 
 	// Check: can't promote someone above your own level
-	if req.RoleID != nil && s.UserCtx.RoleID > *req.RoleID {
+	if req.RoleID != nil && uCtx.RoleID > *req.RoleID {
 		return nil, msg.NewErrorResponse("access_denied", fmt.Errorf("cannot assign higher role than your own"))
 	}
 
 	// Check: can't modify yourself to deactivate
-	if id == s.UserCtx.UserID && req.StatusID != nil && *req.StatusID != 1 {
+	if id == uCtx.UserID && req.StatusID != nil && *req.StatusID != 1 {
 		return nil, msg.NewErrorResponse("access_denied", fmt.Errorf("cannot deactivate yourself"))
 	}
 
@@ -122,16 +116,16 @@ func (s *UserServiceImpl) Update(id int64, req *UpdateUserRequest, updatedBy int
 		return nil, msg.NewErrorResponse("no_updates_provided", fmt.Errorf("empty"))
 	}
 
-	updates["updated_by"] = updatedBy
+	updates["updated_by"] = uCtx.UserID
 
 	return s.Repo.Update(id, updates)
 }
 
-func (s *UserServiceImpl) Delete(id int64, deletedBy int64) *error_responses.ErrorResponse {
+func (s *UserServiceImpl) Delete(id int64, uCtx share.UserContext) *error_responses.ErrorResponse {
 	msg := error_responses.ErrorResponse{}
 
 	// Can't delete yourself
-	if id == s.UserCtx.UserID {
+	if id == uCtx.UserID {
 		return msg.NewErrorResponse("access_denied", fmt.Errorf("cannot delete yourself"))
 	}
 
@@ -146,11 +140,11 @@ func (s *UserServiceImpl) Delete(id int64, deletedBy int64) *error_responses.Err
 	targetUser := target.Users[0]
 
 	// Check: caller must have equal or higher role than target
-	if s.UserCtx.RoleID > targetUser.RoleID {
+	if uCtx.RoleID > targetUser.RoleID {
 		return msg.NewErrorResponse("access_denied", fmt.Errorf("cannot delete higher-privilege user"))
 	}
 
-	return s.Repo.Delete(id, deletedBy)
+	return s.Repo.Delete(id, uCtx.UserID)
 }
 
 func (s *UserServiceImpl) GetCreateForm() any {
