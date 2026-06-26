@@ -41,7 +41,7 @@ type User struct {
 type UserShowRequest struct {
 	PageOption share.Paging   `json:"paging_options" query:"paging_options" validate:"required"`
 	Sorts      []share.Sort   `json:"sorts,omitempty" query:"sorts"`
-	Filters    []share.Filter `json:"filters.omitempty" query:"filters"`
+	Filters    []share.Filter `json:"filters,omitempty" query:"filters"`
 	Search     string         `json:"q,omitempty" query:"q"`
 	CurrencyID int            `json:"currency_id,omitempty" query:"currency_id"`
 }

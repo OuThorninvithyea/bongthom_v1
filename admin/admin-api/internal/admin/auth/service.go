@@ -17,6 +17,15 @@ import (
 	error_responses "admin-api/pkg/responses"
 )
 
+<<<<<<< HEAD
+=======
+type AuthService interface {
+	Login(usreq *AuthRequest) (*AuthLoginReponse, *error_responses.ErrorResponse)
+	CheckSession(loginSession string, userID int64) (bool, *error_responses.ErrorResponse)
+	ForceLogout(userID int64) *error_responses.ErrorResponse
+}
+
+>>>>>>> 0e316a6 (adding force quit and sync delete session with redis and database)
 type AuthServiceImpl struct {
 	Repo  AuthRepo
 	Redis *redis.Client
@@ -97,4 +106,13 @@ func (s *AuthServiceImpl) CheckRedisSession(loginSession string, userID int64) (
 
 	return nil, msg.NewErrorResponse("invalid_session", fmt.Errorf("session mismatch"))
 }
+<<<<<<< HEAD
 	
+=======
+
+func (s *AuthServiceImpl) ForceLogout(userID int64) *error_responses.ErrorResponse {
+	key := fmt.Sprintf("session:%d", userID)
+	_ = s.Redis.Del(context.Background(), key).Err()
+	return s.Repo.ClearLoginSession(userID)
+}
+>>>>>>> 0e316a6 (adding force quit and sync delete session with redis and database)
