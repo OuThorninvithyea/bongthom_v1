@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"database/sql"
 
 	// Commnunity pacakges
 	"github.com/jmoiron/sqlx"
@@ -10,14 +11,10 @@ import (
 )
 
 type AuthRepo interface {
-	Login(username string, password string) (*Auth, *error_responses.ErrorResponse)
+	Login(ureq *AuthRequest) (*Auth, *error_responses.ErrorResponse)
 	UpdateLoginSession(userID int64, loginSession string) *error_responses.ErrorResponse
-<<<<<<< HEAD
-	CheckDatabaseLoginSession(userID int64, loginSession string) (*Auth, *error_responses.ErrorResponse)
-=======
 	CheckDatabaseLoginSession(userID int64, loginSession string) *error_responses.ErrorResponse
 	ClearLoginSession(userID int64) *error_responses.ErrorResponse
->>>>>>> 0e316a6 (adding force quit and sync delete session with redis and database)
 }
 
 type AuthRepoImpl struct {
@@ -28,20 +25,21 @@ func NewAuthRepoImpl(db *sqlx.DB) AuthRepo {
 	return &AuthRepoImpl{db: db}
 }
 
-func (r *AuthRepoImpl) Login(username string, password string) (*Auth, *error_responses.ErrorResponse) {
+func (r *AuthRepoImpl) Login(ureq *AuthRequest) (*Auth, *error_responses.ErrorResponse) {
 	msg := error_responses.ErrorResponse{}
-
 	var user Auth
 	err := r.db.Get(&user,
-		`SELECT id, user_name, role_id
+		`SELECT id, user_name, role_id, password
 		 FROM tbl_users
-		 WHERE user_name = $1 AND password = $2
+		 WHERE user_name = $1 AND deleted_at IS NULL
 		 LIMIT 1`,
-		username, password,
+		ureq.Username,
 	)
-
 	if err != nil {
-		return nil, msg.NewErrorResponse("invalid_credentials", err)
+		if err == sql.ErrNoRows {
+			return nil, msg.NewErrorResponse("invalid_credentials", err)
+		}
+		return nil, msg.NewErrorResponse("database_error", err)
 	}
 
 	return &user, nil
@@ -53,13 +51,14 @@ func (r *AuthRepoImpl) UpdateLoginSession(userID int64, loginSession string) *er
 		`UPDATE tbl_users SET login_session = $1, last_login = NOW() WHERE id = $2`,
 		loginSession, userID,
 	)
+
 	if err != nil {
 		return msg.NewErrorResponse("database_error", err)
 	}
 	return nil
 }
 
-func (r *AuthRepoImpl) CheckDatabaseLoginSession(userID int64, loginSession string) (*Auth, *error_responses.ErrorResponse) {
+func (r *AuthRepoImpl) CheckDatabaseLoginSession(userID int64, loginSession string) *error_responses.ErrorResponse {
 	msg := error_responses.ErrorResponse{}
 
 	var user Auth
@@ -70,11 +69,12 @@ func (r *AuthRepoImpl) CheckDatabaseLoginSession(userID int64, loginSession stri
 		 LIMIT 1`,
 		userID, loginSession,
 	)
+
 	if err != nil {
-		return nil, msg.NewErrorResponse("invalid_session", err)
+		return msg.NewErrorResponse("invalid_session", err)
 	}
 
-	return &user, nil
+	return nil
 }
 
 func (r *AuthRepoImpl) ClearLoginSession(userID int64) *error_responses.ErrorResponse {
