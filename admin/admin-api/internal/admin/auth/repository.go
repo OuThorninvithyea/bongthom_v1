@@ -14,6 +14,7 @@ type AuthRepo interface {
 	Login(ureq *AuthRequest) (*Auth, *error_responses.ErrorResponse)
 	UpdateLoginSession(userID int64, loginSession string) *error_responses.ErrorResponse
 	CheckDatabaseLoginSession(userID int64, loginSession string) *error_responses.ErrorResponse
+	ClearLoginSession(userID int64) *error_responses.ErrorResponse
 }
 
 type AuthRepoImpl struct {
@@ -73,5 +74,18 @@ func (r *AuthRepoImpl) CheckDatabaseLoginSession(userID int64, loginSession stri
 		return msg.NewErrorResponse("invalid_session", err)
 	}
 
+	return nil
+}
+
+func (r *AuthRepoImpl) ClearLoginSession(userID int64) *error_responses.ErrorResponse {
+	msg := error_responses.ErrorResponse{}
+
+	_, err := r.db.Exec(
+		`UPDATE tbl_users SET login_session = NULL WHERE id = $1`, userID,
+	)
+
+	if err != nil {
+		return msg.NewErrorResponse("database_error", err)
+	}
 	return nil
 }

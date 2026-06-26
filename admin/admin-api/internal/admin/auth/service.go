@@ -22,6 +22,7 @@ import (
 type AuthService interface {
 	Login(usreq *AuthRequest) (*AuthLoginReponse, *error_responses.ErrorResponse)
 	CheckSession(loginSession string, userID int64) (bool, *error_responses.ErrorResponse)
+	ForceLogout(userID int64) *error_responses.ErrorResponse
 }
 
 type AuthServiceImpl struct {
@@ -117,4 +118,10 @@ func (s *AuthServiceImpl) CheckSession(loginSession string, userID int64) (bool,
 	}
 
 	return false, msg.NewErrorResponse("invalid_session", fmt.Errorf("session mismatch"))
+}
+
+func (s *AuthServiceImpl) ForceLogout(userID int64) *error_responses.ErrorResponse {
+	key := fmt.Sprintf("session:%d", userID)
+	_ = s.Redis.Del(context.Background(), key).Err()
+	return s.Repo.ClearLoginSession(userID)
 }
