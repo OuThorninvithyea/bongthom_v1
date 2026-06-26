@@ -12,7 +12,12 @@ import (
 type AuthRepo interface {
 	Login(username string, password string) (*Auth, *error_responses.ErrorResponse)
 	UpdateLoginSession(userID int64, loginSession string) *error_responses.ErrorResponse
+<<<<<<< HEAD
 	CheckDatabaseLoginSession(userID int64, loginSession string) (*Auth, *error_responses.ErrorResponse)
+=======
+	CheckDatabaseLoginSession(userID int64, loginSession string) *error_responses.ErrorResponse
+	ClearLoginSession(userID int64) *error_responses.ErrorResponse
+>>>>>>> 0e316a6 (adding force quit and sync delete session with redis and database)
 }
 
 type AuthRepoImpl struct {
@@ -70,4 +75,17 @@ func (r *AuthRepoImpl) CheckDatabaseLoginSession(userID int64, loginSession stri
 	}
 
 	return &user, nil
+}
+
+func (r *AuthRepoImpl) ClearLoginSession(userID int64) *error_responses.ErrorResponse {
+	msg := error_responses.ErrorResponse{}
+
+	_, err := r.db.Exec(
+		`UPDATE tbl_users SET login_session = NULL WHERE id = $1`, userID,
+	)
+
+	if err != nil {
+		return msg.NewErrorResponse("database_error", err)
+	}
+	return nil
 }
