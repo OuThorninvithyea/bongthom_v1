@@ -113,8 +113,8 @@ func handleUserContext(c fiber.Ctx, claims *jwtauth.Claims, db *sqlx.DB, redis *
 	}
 	c.Locals("UserContext", uCtx)
 
-	sv := auth.NewAuthServiceImpl(db, redis)
-	if _, err := sv.CheckRedisSession(loginSession, claims.UserID); err != nil {
+	sv := auth.NewAuthService(db, redis)
+	if success, err := sv.CheckSession(loginSession, claims.UserID); err != nil || !success {
 		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
 			"success":     false,
 			"message":     "Session expired or invalid",

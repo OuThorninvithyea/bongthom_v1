@@ -58,7 +58,7 @@ func (a *AuthHandler) Login(c fiber.Ctx) error {
 		return err
 	}
 
-	rs, e := a.Services.Login(req.Username, req.Password)
+	rs, e := a.Services.Login(req)
 	// conditions for database error
 	if e != nil {
 		msg, e_msg := translate.TranslateWithError(c, e.MessageID)
@@ -71,7 +71,6 @@ func (a *AuthHandler) Login(c fiber.Ctx) error {
 				),
 			)
 		}
-		c.Status(fiber.StatusInternalServerError)
 		return c.Status(fiber.StatusBadRequest).JSON(
 			response.NewResponseError(
 				msg,
