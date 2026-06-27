@@ -4,8 +4,8 @@ import (
 
 	// Community packages
 	"fmt"
-	"time"
 	"github.com/golang-jwt/jwt/v5"
+	"time"
 )
 
 // Claims holds the JWT payload — fields must match tbl_users + auth tables
@@ -28,8 +28,8 @@ func GenerateToken(userID int64, userName string, loginSession string, roleID in
 		LoginSession: loginSession,
 		RoleID:       roleID,
 		RegisteredClaims: jwt.RegisteredClaims{
-		ExpiresAt: jwt.NewNumericDate(expiresAt),
-		IssuedAt:  jwt.NewNumericDate(now),
+			ExpiresAt: jwt.NewNumericDate(expiresAt),
+			IssuedAt:  jwt.NewNumericDate(now),
 		},
 	}
 
