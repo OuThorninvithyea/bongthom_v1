@@ -27,7 +27,7 @@ type AuthServiceImpl struct {
 	Redis *redis.Client
 }
 
-func NewAuthServiceImpl(db *sqlx.DB, rdb *redis.Client) *AuthServiceImpl {
+func NewAuthServiceImpl(db *sqlx.DB, rdb *redis.Client) AuthService{
 	r := NewAuthRepoImpl(db)
 	return &AuthServiceImpl{
 		Repo:  r,

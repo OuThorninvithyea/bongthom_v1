@@ -82,6 +82,7 @@ func BuildSQLSort(sorts []share.Sort) string {
 	return " ORDER BY " + strings.Join(orderClauses, ", ")
 }
 
+
 func BuildSQLSearch(fields []string, term string, startIdx int) (string, []interface{}) {
 	term = strings.TrimSpace(term)
 	if term == "" || len(fields) == 0 {
