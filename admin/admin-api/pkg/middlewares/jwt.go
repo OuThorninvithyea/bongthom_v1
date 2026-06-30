@@ -111,6 +111,7 @@ func handleUserContext(c fiber.Ctx, claims *jwtauth.Claims, db *sqlx.DB, redis *
 		UserAgent:    c.Get("User-Agent", "unknown"),
 		Ip:           c.IP(),
 	}
+	
 	c.Locals("UserContext", uCtx)
 
 	sv := auth.NewAuthService(db, redis)
@@ -124,3 +125,5 @@ func handleUserContext(c fiber.Ctx, claims *jwtauth.Claims, db *sqlx.DB, redis *
 
 	return c.Next()
 }
+
+

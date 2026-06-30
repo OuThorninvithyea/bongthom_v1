@@ -47,6 +47,7 @@ type UserShowRequest struct {
 }
 
 func (u *UserShowRequest) bind(c fiber.Ctx, v *utls.Validator) error {
+
 	if err := c.Bind().Query(u); err != nil {
 		return err
 	}
@@ -62,6 +63,7 @@ func (u *UserShowRequest) bind(c fiber.Ctx, v *utls.Validator) error {
 			u.Filters[i].Value = value
 		}
 	}
+
 	if u.Search == "" {
 		u.Search = c.Query("q")
 	}

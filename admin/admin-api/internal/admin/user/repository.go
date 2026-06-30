@@ -31,6 +31,7 @@ func NewUserRepoImpl(db *sqlx.DB) UserRepo {
 }
 
 func (r *UserRepoImpl) Show(userRequest UserShowRequest) (*UserResponse, *error_responses.ErrorResponse) {
+	
 	// Calculatings for skipping users in table database, OFFEST = skip
 	var per_page = userRequest.PageOption.Perpage
 	var page = userRequest.PageOption.Page
@@ -84,7 +85,7 @@ func (r *UserRepoImpl) ShowOne(id int64) (*UserResponse, *error_responses.ErrorR
 
 	var user User
 	err := r.db.Get(&user,
-		`SELECT * FROM tbl_users WHERE id = $1 AND deleted_at IS NULL LIMIT 1`, id,
+		`SELECT * FROM tbl_users WHERE id = $1 AND deleted_at IS NULL LIMIT 1`, id ,
 	)
 	if err != nil {
 		return nil, msg.NewErrorResponse("user_not_found", err)

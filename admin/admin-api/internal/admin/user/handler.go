@@ -74,7 +74,10 @@ func (h *UserHandler) Show(c fiber.Ctx) error {
 		)
 	}
 	return c.Status(fiber.StatusOK).JSON(
-		response.NewResponseWithPaing(msg, constants.Generic_success, users, usersShowRequest.PageOption.Page, usersShowRequest.PageOption.Perpage, users.Total),
+		response.NewResponseWithPaing(msg, constants.Generic_success,
+		 users, usersShowRequest.PageOption.Page,
+		 usersShowRequest.PageOption.Perpage,
+		 users.Total),
 	)
 }
 
