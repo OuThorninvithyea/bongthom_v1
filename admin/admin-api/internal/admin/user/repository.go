@@ -13,6 +13,16 @@ import (
 	custom_sql "admin-api/pkg/sql"
 )
 
+var allowedUserColumns = map[string]string{
+	"id":         "u.id",
+	"user_name":  "u.user_name",
+	"first_name": "u.first_name",
+	"last_name":  "u.last_name",
+	"email":      "u.email",
+	"role_id":    "u.role_id",
+	"created_at": "u.created_at",
+}
+
 type UserRepo interface {
 	Show(u UserShowRequest) (*UserResponse, *error_responses.ErrorResponse)
 	ShowOne(id int64) (*UserResponse, *error_responses.ErrorResponse)
@@ -31,16 +41,25 @@ func NewUserRepoImpl(db *sqlx.DB) UserRepo {
 }
 
 func (r *UserRepoImpl) Show(userRequest UserShowRequest) (*UserResponse, *error_responses.ErrorResponse) {
-	
+	msg := error_responses.ErrorResponse{}
 	// Calculatings for skipping users in table database, OFFEST = skip
 	var per_page = userRequest.PageOption.Perpage
 	var page = userRequest.PageOption.Page
 	var offset = (page - 1) * per_page
 	fmt.Printf("offset:%d", offset)
 	var limit_clause = fmt.Sprintf(" LIMIT %d OFFSET %d", per_page, offset)
-	var sql_orderby = custom_sql.BuildSQLSort(userRequest.Sorts)
 
-	sql_filters, args_filters := custom_sql.BuildSQLFilter(userRequest.Filters)
+	sql_orderby, err := custom_sql.BuildSQLSort(userRequest.Sorts, allowedUserColumns)
+	if err != nil {
+		return nil, msg.NewErrorResponse("invalid_request", err)
+	}
+
+	sql_filters, args_filters, err := custom_sql.BuildSQLFilter(userRequest.Filters, allowedUserColumns)
+
+	if err != nil {
+		return nil, msg.NewErrorResponse("invalid_request", err)
+	}
+
 	if len(args_filters) > 0 {
 		sql_filters = " AND " + sql_filters
 	}
@@ -53,14 +72,12 @@ func (r *UserRepoImpl) Show(userRequest UserShowRequest) (*UserResponse, *error_
 		args_filters = append(args_filters, searchArgs...)
 	}
 
-	msg := error_responses.ErrorResponse{}
-
 	// Total count with same filters (no limit/offset/order)
 	var total int
 	countQuery := fmt.Sprintf(
 		`SELECT COUNT(*) FROM tbl_users u WHERE deleted_at IS NULL %s`,
 		sql_filters)
-	err := r.db.Get(&total, countQuery, args_filters...)
+	err = r.db.Get(&total, countQuery, args_filters...)
 	if err != nil {
 		return nil, msg.NewErrorResponse("database_error", err)
 	}
@@ -85,7 +102,7 @@ func (r *UserRepoImpl) ShowOne(id int64) (*UserResponse, *error_responses.ErrorR
 
 	var user User
 	err := r.db.Get(&user,
-		`SELECT * FROM tbl_users WHERE id = $1 AND deleted_at IS NULL LIMIT 1`, id ,
+		`SELECT * FROM tbl_users WHERE id = $1 AND deleted_at IS NULL LIMIT 1`, id,
 	)
 	if err != nil {
 		return nil, msg.NewErrorResponse("user_not_found", err)
@@ -142,6 +159,7 @@ func (r *UserRepoImpl) Update(id int64, updates map[string]any) (*User, *error_r
 		`UPDATE tbl_users SET %s WHERE id = $%d AND deleted_at IS NULL RETURNING *`,
 		strings.Join(setClauses, ", "), i,
 	)
+
 	args = append(args, id)
 
 	var user User
@@ -159,6 +177,7 @@ func (r *UserRepoImpl) Delete(id int64, deletedBy int64) *error_responses.ErrorR
 		`UPDATE tbl_users SET deleted_at = NOW(), deleted_by = $1 WHERE id = $2 AND deleted_at IS NULL`,
 		deletedBy, id,
 	)
+
 	if err != nil {
 		return msg.NewErrorResponse("database_error", err)
 	}
