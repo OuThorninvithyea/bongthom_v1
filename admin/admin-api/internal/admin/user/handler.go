@@ -53,6 +53,7 @@ func (h *UserHandler) Show(c fiber.Ctx) error {
 		)
 	}
 
+
 	users, e := h.Service.Show(usersShowRequest)
 
 	if e != nil {

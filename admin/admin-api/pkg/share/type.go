@@ -1,8 +1,6 @@
 package share
 
 import (
-
-	// Community pacakge
 	"time"
 )
 
@@ -37,7 +35,7 @@ type UserContext struct {
 
 type Paging struct {
 	Page    int `json:"page" query:"page" validate:"required,min=1"`
-	Perpage int `json:"per_page" query:"per_page" validate:"required,min=1"`
+	Perpage int `json:"per_page" query:"per_page" validate:"required,min=1,max=100"`
 }
 
 // Sort products price and asc to desc

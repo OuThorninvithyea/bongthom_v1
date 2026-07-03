@@ -71,17 +71,21 @@ func SetSeqNextVal(seqName string, value int, db *sqlx.DB) (*int, error) {
 	return &result.ID, nil
 }
 
-func BuildSQLSort(sorts []share.Sort) string {
+func BuildSQLSort(sorts []share.Sort, allowedColumns map[string]string) (string, error) {
 	if len(sorts) == 0 {
-		return " ORDER BY id"
+		return " ORDER BY id", nil
 	}
 	var orderClauses []string
 	for _, sort := range sorts {
-		orderClauses = append(orderClauses, fmt.Sprintf("%s %s", sort.Property, sort.Direction))
-	}
-	return " ORDER BY " + strings.Join(orderClauses, ", ")
-}
+		dbColumn, ok := allowedColumns[sort.Property]
+		if !ok {
+			return "", fmt.Errorf("invalid sort column")
+		}
 
+		orderClauses = append(orderClauses, fmt.Sprintf("%s %s", dbColumn, sort.Direction))
+	}
+	return " ORDER BY " + strings.Join(orderClauses, ", "), nil
+}
 
 func BuildSQLSearch(fields []string, term string, startIdx int) (string, []interface{}) {
 	term = strings.TrimSpace(term)
@@ -96,12 +100,17 @@ func BuildSQLSearch(fields []string, term string, startIdx int) (string, []inter
 	return "(" + strings.Join(parts, " OR ") + ")", []interface{}{"%" + term + "%"}
 }
 
-func BuildSQLFilter(req []share.Filter) (string, []interface{}) {
+func BuildSQLFilter(req []share.Filter, allowedColumns map[string]string) (string, []interface{}, error) {
 	var sqlFilters []string
 	var param []interface{}
 
 	for i, filter := range req {
 		paramPlaceholder := fmt.Sprintf("$%d", i+1)
+
+		dbcolumns, ok := allowedColumns[filter.Property]
+		if !ok {
+			return "", nil, fmt.Errorf("invalid filter column")
+		}
 
 		// Convert the filter value to the appropriate type
 		switch v := filter.Value.(type) {
@@ -120,27 +129,27 @@ func BuildSQLFilter(req []share.Filter) (string, []interface{}) {
 		// Handle the converted value
 		switch v := filter.Value.(type) {
 		case int:
-			sqlFilters = append(sqlFilters, fmt.Sprintf("%s = %s", filter.Property, paramPlaceholder))
+			sqlFilters = append(sqlFilters, fmt.Sprintf("%s = %s", dbcolumns, paramPlaceholder))
 			param = append(param, v)
 		case bool:
-			sqlFilters = append(sqlFilters, fmt.Sprintf("%s = %s", filter.Property, paramPlaceholder))
+			sqlFilters = append(sqlFilters, fmt.Sprintf("%s = %s", dbcolumns, paramPlaceholder))
 			param = append(param, v)
 		case string:
 			if strings.Contains(v, "%") {
 				// Handle cases with LIKE for wildcard searches
-				sqlFilters = append(sqlFilters, fmt.Sprintf("%s LIKE %s", filter.Property, paramPlaceholder))
+				sqlFilters = append(sqlFilters, fmt.Sprintf("%s LIKE %s", dbcolumns, paramPlaceholder))
 			} else {
-				sqlFilters = append(sqlFilters, fmt.Sprintf("%s = %s", filter.Property, paramPlaceholder))
+				sqlFilters = append(sqlFilters, fmt.Sprintf("%s = %s", dbcolumns, paramPlaceholder))
 			}
 			param = append(param, v)
 		case time.Time:
 			// Handle date comparison
-			sqlFilters = append(sqlFilters, fmt.Sprintf("%s::DATE = %s", filter.Property, paramPlaceholder))
+			sqlFilters = append(sqlFilters, fmt.Sprintf("%s::DATE = %s", dbcolumns, paramPlaceholder))
 			param = append(param, v)
 		default:
-			return "", nil
+			return "", nil, fmt.Errorf("unsupported filter value type")
 		}
 	}
 	filterClause := strings.Join(sqlFilters, " AND ")
-	return filterClause, param
+	return filterClause, param, nil
 }

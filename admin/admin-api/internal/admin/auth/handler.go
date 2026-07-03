@@ -37,7 +37,6 @@ func NewAuthHandler(a *fiber.App, db *sqlx.DB, rdb *redis.Client) *AuthHandler {
 
 // payload = http body response // request
 func (a *AuthHandler) Login(c fiber.Ctx) error {
-
 	req := &AuthRequest{}
 	// validator is dev package,
 	v := utls.NewValidator()
