@@ -65,7 +65,7 @@ func (r *UserRepoImpl) Show(userRequest UserShowRequest) (*UserResponse, *error_
 	}
 
 	if searchClause, searchArgs := custom_sql.BuildSQLSearch(
-		[]string{"u.user_name", "u.first_name", "u.last_name", "u.user_alias", "u.email"},
+		[]string{"u.user_name", "u.first_name", "u.last_name", "u.email"},
 		userRequest.Search, len(args_filters)+1,
 	); searchClause != "" {
 		sql_filters += " AND " + searchClause
