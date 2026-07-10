@@ -17,3 +17,11 @@ func NewAuthRoute(a *fiber.App, db *sqlx.DB, rdb *redis.Client) *AuthRoute {
 		handler: h,
 	}
 }
+
+func NewProtectedAuthRoute(a *fiber.App, db *sqlx.DB, rdb *redis.Client) *AuthRoute {
+	h := NewAuthHandler(a, db, rdb)
+	a.Get("/api/v1/admin/auth/me", h.Me)
+	return &AuthRoute{
+		handler: h,
+	}
+}

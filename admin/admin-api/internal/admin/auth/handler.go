@@ -1,11 +1,5 @@
 package auth
 
-// HANDLER LAYER — HTTP only. No business logic. No SQL.
-// Job: bind JSON → validate input → call service → translate errors → respond.
-//
-// Example: "POST /login {username, password} → is username ≥4 chars?
-//          → call service.Login() → translate result → return JSON"
-
 import (
 	// Commnuity Packages
 	"errors"
@@ -18,6 +12,7 @@ import (
 	// Internal Packages
 	constants "admin-api/pkg/constants"
 	response "admin-api/pkg/http"
+	types "admin-api/pkg/share"
 	"admin-api/pkg/translate"
 	"admin-api/pkg/utls"
 )
@@ -93,5 +88,26 @@ func (a *AuthHandler) Login(c fiber.Ctx) error {
 			response.NewResponse(msg, constants.Login_success, rs),
 		)
 	}
+
+}
+
+// checking sessions user is its still valid for frontend validations and flutter
+
+func (a *AuthHandler) Me(c fiber.Ctx) error {
+	userContext, ok := c.Locals("UserContext").(types.UserContext)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(
+			response.NewResponseError(
+				"Unauthorized",
+				constants.Generic_invalid,
+				nil,
+			),
+		)
+	}
+	data := a.Services.Me(userContext)
+
+	return c.Status(fiber.StatusOK).JSON(
+		response.NewResponse("Session valid", constants.Generic_success, data),
+	)
 
 }
