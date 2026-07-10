@@ -35,14 +35,14 @@ func (r *AuthRepoImpl) Login(ureq *AuthRequest) (*Auth, *error_responses.ErrorRe
 		 LIMIT 1`,
 		ureq.Username,
 	)
-	
+
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, msg.NewErrorResponse("invalid_credentials", err)
 		}
 		return nil, msg.NewErrorResponse("database_error", err)
 	}
-	
+
 	return &user, nil
 }
 
@@ -87,6 +87,6 @@ func (r *AuthRepoImpl) ClearLoginSession(userID int64) *error_responses.ErrorRes
 
 	if err != nil {
 		return msg.NewErrorResponse("database_error", err)
-	} 
+	}
 	return nil
 }

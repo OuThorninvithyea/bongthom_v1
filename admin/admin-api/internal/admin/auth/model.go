@@ -3,7 +3,7 @@ package auth
 import (
 	// Commnunity Pacakges
 	"time"
-	
+
 	"github.com/gofiber/fiber/v3"
 
 	// Internal Packages
@@ -69,4 +69,14 @@ type AuthLoginReponse struct {
 		Token     string `json:"token"`
 		TokenType string `json:"token_type"`
 	} `json:"auth"`
+}
+
+type AuthMeResponse struct {
+	User AuthMeUser `json:"user"`
+}
+
+type AuthMeUser struct {
+	UserID   int64  `json:"user_id"`
+	Username string `json:"user_name"`
+	RoleID   int    `json:"role_id"`
 }

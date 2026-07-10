@@ -9,6 +9,7 @@ import (
 	jwtauth "admin-api/pkg/common/auth"
 	"admin-api/pkg/logs"
 	error_responses "admin-api/pkg/responses"
+	types "admin-api/pkg/share"
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -20,6 +21,7 @@ type AuthService interface {
 	Login(usreq *AuthRequest) (*AuthLoginReponse, *error_responses.ErrorResponse)
 	CheckSession(loginSession string, userID int64) (bool, *error_responses.ErrorResponse)
 	ForceLogout(userID int64) *error_responses.ErrorResponse
+	Me(userContext types.UserContext) *AuthMeResponse
 }
 
 type AuthServiceImpl struct {
@@ -27,7 +29,7 @@ type AuthServiceImpl struct {
 	Redis *redis.Client
 }
 
-func NewAuthServiceImpl(db *sqlx.DB, rdb *redis.Client) AuthService{
+func NewAuthServiceImpl(db *sqlx.DB, rdb *redis.Client) AuthService {
 	r := NewAuthRepoImpl(db)
 	return &AuthServiceImpl{
 		Repo:  r,
@@ -111,4 +113,14 @@ func (s *AuthServiceImpl) ForceLogout(userID int64) *error_responses.ErrorRespon
 	key := fmt.Sprintf("session:%d", userID)
 	_ = s.Redis.Del(context.Background(), key).Err()
 	return s.Repo.ClearLoginSession(userID)
+}
+
+func (s *AuthServiceImpl) Me(userContext types.UserContext) *AuthMeResponse {
+	return &AuthMeResponse{
+		User: AuthMeUser{
+			UserID:   userContext.UserID,
+			Username: userContext.UserName,
+			RoleID:   userContext.RoleID,
+		},
+	}
 }

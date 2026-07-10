@@ -14,6 +14,7 @@ import (
 	"github.com/redis/go-redis/v9"
 
 	// Internal pacakges
+
 	"admin-api/internal/admin/auth"
 	jwtauth "admin-api/pkg/common/auth"
 	response "admin-api/pkg/http"
@@ -111,7 +112,7 @@ func handleUserContext(c fiber.Ctx, claims *jwtauth.Claims, db *sqlx.DB, redis *
 		UserAgent:    c.Get("User-Agent", "unknown"),
 		Ip:           c.IP(),
 	}
-	
+
 	c.Locals("UserContext", uCtx)
 
 	sv := auth.NewAuthService(db, redis)
@@ -125,5 +126,3 @@ func handleUserContext(c fiber.Ctx, claims *jwtauth.Claims, db *sqlx.DB, redis *
 
 	return c.Next()
 }
-
-
