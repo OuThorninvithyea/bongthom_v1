@@ -10,17 +10,17 @@ pg_ctl -D /opt/homebrew/var/postgresql@18 start
 redis-server --daemonize yes
 
 # Run (hot reload)
-cd admin/admin-api && air
+cd admin/kaifin-api && air
 
 # Or manual build + run
-cd admin/admin-api && go build -o ./tmp/main . && ./tmp/main
+cd admin/kaifin-api && go build -o ./tmp/main . && ./tmp/main
 ```
 
 Server starts on the port defined in `.env` `API_PORT` (currently 9000).
 
 ## Layer rules — follow these or it won't compile
 
-Every domain module is 5 files in `internal/admin/<name>/`. Build order: **model → repo → service → handler → router**.
+Every domain module is 5 files in `internal/mobile/<name>/`. Build order: **model → repo → service → handler → router**.
 
 ```
 HANDLER    HTTP only. Bind, validate, translate, respond. NEVER: SQL, Redis, business logic.

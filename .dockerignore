@@ -11,5 +11,5 @@
 **/*.log
 
 dump.rdb
-admin/admin-api/tmp
-admin/admin-api/tmp/**
+admin/kaifin-api/tmp
+admin/kaifin-api/tmp/**
